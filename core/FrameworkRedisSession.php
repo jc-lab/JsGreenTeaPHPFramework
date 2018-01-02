@@ -11,17 +11,17 @@
  *             of the MIT license.  See the LICENSE file for details.
  */
 
-namespace JsGreenTeaPHPFramework;
+namespace JsGreenTeaPHPFramework\core;
 
 class FrameworkRedisSession extends RedisSession
 {
     public function __construct($object)
     {
-        if(is_subclass_of($object, 'JsGreenTeaPHPFramework\RedisSession'))
+        if(is_subclass_of($object, 'JsGreenTeaPHPFramework\core\RedisSession'))
         {
             $this->m_dbconn = &$object->m_dbconn;
             $this->m_dbconntype = &$object->m_dbconntype;
-        }else if(get_class($object) ==  'JsGreenTeaPHPFramework\Core')
+        }else if(get_class($object) ==  'JsGreenTeaPHPFramework\core\Core')
         {
             $oConfig = $object->getConfig();
             self::connect($oConfig->frameworkredis_host, $oConfig->frameworkredis_port);

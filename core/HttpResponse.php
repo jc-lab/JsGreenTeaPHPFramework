@@ -11,7 +11,7 @@
  *             of the MIT license.  See the LICENSE file for details.
  */
 
-namespace JsGreenTeaPHPFramework;
+namespace JsGreenTeaPHPFramework\core;
 
 require_once(__DIR__.'/HttpStatus.php');
 
@@ -19,6 +19,8 @@ class HttpResponse
 {
     private $m_oCore;
     private $m_httpcode = HttpStatus::HTTP_OK;
+
+    private $m_outputState = 0;
 
     public function __construct($oCore)
     {
@@ -33,5 +35,19 @@ class HttpResponse
     public function getStatus()
     {
         return $this->m_httpcode;
+    }
+
+    public function beginOutput()
+    {
+        if($this->m_outputState == 0)
+        {
+            header($_SERVER['SERVER_PROTOCOL'].' '.$this->m_httpcode.' '.HttpStatus::getString($this->m_httpcode));
+            $this->m_outputState = 1;
+        }
+    }
+
+    public function write($data)
+    {
+        echo $data;
     }
 }

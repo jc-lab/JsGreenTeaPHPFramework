@@ -12,7 +12,7 @@
  */
 
 
-namespace JsGreenTeaPHPFramework;
+namespace JsGreenTeaPHPFramework\core;
 
 require_once(__DIR__.'/ModelAndView.php');
 
@@ -22,6 +22,8 @@ class Request
     private $m_oModelAndView;
     private $m_parameters;
     private $m_session;
+    private $m_pageSession = array();
+    private $m_urlPath;
 
     public function __construct($oCore)
     {
@@ -32,18 +34,28 @@ class Request
         $this->m_session->_init();
     }
 
+    public function _setUrlPath($uri_path)
+    {
+        $this->m_urlPath = $uri_path;
+    }
+
+    public function getUrlPath()
+    {
+        return $this->m_urlPath;
+    }
+
     public function _setModelAndView(&$object)
     {
         $t_object = mb_strtolower(gettype($object));
         if(strcmp($t_object, "string") == 0)
         {
-            $this->m_oModelAndView = new ModelAndView($this->m_oCore);
+            $this->m_oModelAndView = new ModelAndView();
             $this->m_oModelAndView->setViewName($object);
         }else if(strcmp($t_object, "null") == 0){
-            $this->m_oModelAndView = new ModelAndView($this->m_oCore);
+            $this->m_oModelAndView = new ModelAndView();
         }else if(strcmp($t_object, "object") == 0){
             $cn_object = get_class($object);
-            if(strcmp($cn_object, "JsGreenTeaPHPFramework\\ModelAndView") == 0)
+            if(strcmp($cn_object, "JsGreenTeaPHPFramework\\core\\ModelAndView") == 0)
             {
                 $this->m_oModelAndView = $object;
             }
@@ -61,7 +73,7 @@ class Request
     {
         if(!$this->m_oModelAndView)
         {
-            $this->m_oModelAndView = new ModelAndView($this->m_oCore);
+            $this->m_oModelAndView = new ModelAndView();
         }
         return $this->m_oModelAndView;
     }
@@ -89,5 +101,10 @@ class Request
     public function &getSession()
     {
         return $this->m_session;
+    }
+
+    public function &getPageSession()
+    {
+        return $this->m_pageSession;
     }
 };

@@ -11,7 +11,7 @@
  *             of the MIT license.  See the LICENSE file for details.
  */
 
-namespace JsGreenTeaPHPFramework;
+namespace JsGreenTeaPHPFramework\core;
 
 class FrameworkObject
 {
@@ -37,5 +37,10 @@ class FrameworkObject
     public function &getFrameworkCache()
     {
         return $this->m_oCore->_getFrameworkCache();
+    }
+
+    public function &getResourceManager()
+    {
+        return $this->m_oCore->_getResourceManager();
     }
 }

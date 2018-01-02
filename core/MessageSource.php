@@ -11,7 +11,7 @@
  *             of the MIT license.  See the LICENSE file for details.
  */
 
-namespace JsGreenTeaPHPFramework;
+namespace JsGreenTeaPHPFramework\core;
 
 class MessageSource extends FrameworkObject
 {
@@ -55,12 +55,12 @@ class MessageSource extends FrameworkObject
             if($i == 0) {
                 $filename = 'res/messages_' . $locale->language . '.xml';
                 $filepath = $workdir.'/'.$filename;
-                $filestat = stat($filepath);
+                $filestat = @stat($filepath);
                 if(!$filestat)
                 {
                     $filename = 'res/messages.xml';
                     $filepath = $workdir.'/'.$filename;
-                    $filestat = stat($filepath);
+                    $filestat = @stat($filepath);
                     if(!$filestat)
                     {
                         continue;
@@ -70,12 +70,12 @@ class MessageSource extends FrameworkObject
                 $dirname = $this->m_messagesDirs[$i - 1];
                 $filename = 'res/'.$dirname.'/messages_' . $locale->language . '.xml';
                 $filepath = $workdir.'/'.$filename;
-                $filestat = stat($filepath);
+                $filestat = @stat($filepath);
                 if(!$filestat)
                 {
                     $filename = 'res/'.$dirname.'/messages.xml';
                     $filepath = $workdir.'/'.$filename;
-                    $filestat = stat($filepath);
+                    $filestat = @stat($filepath);
                     if(!$filestat)
                     {
                         continue;
@@ -83,7 +83,7 @@ class MessageSource extends FrameworkObject
                 }
             }
 
-            $filenamehash = substr(md5($filename), 0, 8);
+            $filenamehash = substr(md5($filename), 0, 16);
 
             $cached = $oFrameworkCache->getEx('msgsrc:'.$filenamehash.':'.$name);
             if($cached)

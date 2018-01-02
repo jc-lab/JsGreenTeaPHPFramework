@@ -11,18 +11,30 @@
  *             of the MIT license.  See the LICENSE file for details.
  */
 
-namespace JsGreenTeaPHPFramework;
+namespace JsGreenTeaPHPFramework\core;
 
 class ResourceManager
 {
     private $m_oCore;
+    private $m_inited = false;
     private $m_common;
     private $m_common_strings;
     private $m_common_settings;
 
+    private $m_receiverHandlers = array();
+
     public function __construct($oCore)
     {
         $this->m_oCore = $oCore;
+    }
+
+    public function addReceiver($cbfunc, $cbparam = null)
+    {
+        $this->m_receiverHandlers[] = array($cbfunc, $cbparam);
+        if($this->m_inited)
+        {
+            call_user_func($cbfunc, $cbparam);
+        }
     }
 
     public function _init()
@@ -34,9 +46,12 @@ class ResourceManager
             $this->m_common = simplexml_load_file($filepath);
             if(isset($this->m_common->setting))
             {
-                foreach($this->m_common->string as $item) {
+                foreach($this->m_common->setting as $item) {
                     $attrs = $item->attributes();
-                    $this->m_common_settings[$attrs['name']->__toString()] = $item->__toString();
+                    if(isset($attrs['value']))
+                        $this->m_common_settings[$attrs['name']->__toString()] = $attrs['value']->__toString();
+                    else
+                        $this->m_common_settings[$attrs['name']->__toString()] = $item->__toString();
                 }
             }
             if(isset($this->m_common->string))
@@ -47,6 +62,11 @@ class ResourceManager
                 }
             }
         }
+        $this->m_inited = true;
+        foreach($this->m_receiverHandlers as &$item)
+        {
+            call_user_func($item[0], $item[1]);
+        }
     }
 
     public function &_getCommon()
@@ -56,11 +76,27 @@ class ResourceManager
 
     public function getResString($name)
     {
+        if(!isset($this->m_common_strings[$name]))
+            return NULL;
         return @$this->m_common_strings[$name];
     }
 
     public function getResSetting($name)
     {
+        if(!isset($this->m_common_settings[$name]))
+            return NULL;
         return @$this->m_common_settings[$name];
+    }
+
+    public function getResSettingsBool($name)
+    {
+        if(!isset($this->m_common_settings[$name]))
+            return NULL;
+        $value = strtolower($this->m_common_settings[$name]);
+        if($value == "true")
+            return true;
+        else if($value == "1")
+            return true;
+        return false;
     }
 }

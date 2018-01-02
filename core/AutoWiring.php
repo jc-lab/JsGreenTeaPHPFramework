@@ -11,7 +11,7 @@
  *             of the MIT license.  See the LICENSE file for details.
  */
 
-namespace JsGreenTeaPHPFramework;
+namespace JsGreenTeaPHPFramework\core;
 
 class AutoWiring
 {
@@ -206,7 +206,7 @@ class AutoWiring
                                     $classPath .= $classNameArr[$i] . "/";
                                 }
                             }
-                            $classFullPath = __DIR__.'/'.$classPath;
+                            $classFullPath = __DIR__.'/../'.$classPath;
                             if(!file_exists($classFullPath))
                                 $classFullPath = NULL;
                         }else {

@@ -11,7 +11,7 @@
  *             of the MIT license.  See the LICENSE file for details.
  */
 
-namespace JsGreenTeaPHPFramework;
+namespace JsGreenTeaPHPFramework\core;
 
 class Controller extends FrameworkObject
 {
@@ -82,7 +82,9 @@ class Controller extends FrameworkObject
 
         foreach($this->m_routes as &$item)
         {
-            if($item['path'] == $pagepath)
+            $item_path = $item['path'];
+
+            if($item_path == $pagepath)
             {
                 if(($item['method'] == self::METHOD_BOTH) || ($item['method'] == $nhttpmethod)) {
                     $routeinfo = $item;
@@ -126,7 +128,7 @@ class Controller extends FrameworkObject
             'vars' => array()
         );
 
-        $newregex = "/";
+        $newregex = "/^";
         $vars = array();
 
         $tmpmatches = NULL;
@@ -143,7 +145,7 @@ class Controller extends FrameworkObject
         }
         $temp = substr($path, $prevpos);
         $temp = preg_quote($temp, '/');
-        $newregex .= $temp . '/';
+        $newregex .= $temp . '$/';
 
         if(count($tmpmatches[1]) > 0)
         {

@@ -11,10 +11,14 @@
  *             of the MIT license.  See the LICENSE file for details.
  */
 
-namespace JsGreenTeaPHPFramework;
+namespace JsGreenTeaPHPFramework\core;
 
 class SqlSession
 {
+    const FLAG_ASSOC = 1;
+    const FLAG_NUM = 2;
+    const FLAG_BOTH = 3;
+
     protected $m_dbconn = NULL;
 
     public $connect_errno = 0;
@@ -238,20 +242,45 @@ class Result
         $this->m_numOfCols = $stmt->field_count;
     }
 
-    public function fetch_array($flags = 0)
+    public function close()
+    {
+        $this->m_stmt->reset();
+        $this->m_stmt->close();
+    }
+
+    public function fetch_array($flags = \JsGreenTeaPHPFramework\core\SqlSession::FLAG_ASSOC)
     {
         $row = array();
         $params = array();
+        $variables = array();
+
+        $meta = $this->m_stmt->result_metadata();
+        while($field = $meta->fetch_field())
+        {
+            $variables[] = $field;
+        }
+
         for($i=0; $i<$this->m_numOfCols; $i++)
         {
-            $row[$i] = NULL;
-            $params[] = &$row[$i];
+            if($flags == \JsGreenTeaPHPFramework\core\SqlSession::FLAG_ASSOC) {
+                $row[$variables[$i]->name] = NULL;
+                $params[] = &$row[$variables[$i]->name];
+            }else{
+                $row[$i] = NULL;
+                $params[] = &$row[$i];
+            }
         }
 
         $this->m_stmt->bind_result(...$params);
 
         // This should advance the "$stmt" cursor.
         if (!$this->m_stmt->fetch()) { return NULL; };
+
+        if(($flags != \JsGreenTeaPHPFramework\core\SqlSession::FLAG_ASSOC) && ($flags & \JsGreenTeaPHPFramework\core\SqlSession::FLAG_ASSOC)) {
+            for ($i = 0; $i < $this->m_numOfCols; $i++) {
+                $row[$variables[$i]->name] = &$row[$i];
+            }
+        }
 
         // Return the array we built.
         return $row;

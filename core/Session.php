@@ -11,7 +11,7 @@
  *             of the MIT license.  See the LICENSE file for details.
  */
 
-namespace JsGreenTeaPHPFramework;
+namespace JsGreenTeaPHPFramework\core;
 
 require_once("SqlSession.php");
 
@@ -87,6 +87,10 @@ class Session
         }
     }
 
+    public function getClientAddr() {
+        return $this->m_remoteip;
+    }
+
     public function setCookieMaxAge($value)
     {
         $this->m_settings_maxAge = intval($value);
@@ -148,9 +152,32 @@ class Session
         }else {
             $frameworkCache = $this->m_oCore->_getFrameworkCache();
             $value = $frameworkCache->getEx('session:' . $this->m_session_idhex . ':' . $key);
-            $this->m_cachedValues[$key] = $value[0];
-            return $value[0];
+            if(is_array($value))
+            {
+                $this->m_cachedValues[$key] = $value[0];
+                return $value[0];
+            }else{
+                return NULL;
+            }
         }
+    }
+
+    public function destroy()
+    {
+        $frameworkCache = $this->m_oCore->_getFrameworkCache();
+        $frameworkCache->del('session:'.$this->m_session_idhex.':*');
+        $this->m_cachedValues = array();
+    }
+
+    public static function get($name)
+    {
+        global $request;
+        if($request)
+        {
+            $session = $request->getSession();
+            return $session->getAttribute($name);
+        }
+        return NULL;
     }
 
 };

@@ -11,10 +11,10 @@
  *             of the MIT license.  See the LICENSE file for details.
  */
 
-namespace JsGreenTeaPHPFramework;
+namespace JsGreenTeaPHPFramework\core;
 
 if(!class_exists("Redis", true))
-    require_once(__DIR__.'/libraries/predis/autoload.php');
+    require_once(__DIR__.'/../libraries/predis/autoload.php');
 
 class RedisSession
 {
@@ -100,6 +100,16 @@ class RedisSession
     public function exists($key)
     {
         return $this->m_dbconn->exists($key);
+    }
+
+    public function scan(&$cursor, $options = null)
+    {
+        return $this->m_dbconn->scan($cursor, $options);
+    }
+
+    public function del($keys)
+    {
+        return $this->m_dbconn->del($keys);
     }
 
 };

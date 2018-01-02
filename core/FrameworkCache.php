@@ -11,7 +11,7 @@
  *             of the MIT license.  See the LICENSE file for details.
  */
 
-namespace JsGreenTeaPHPFramework;
+namespace JsGreenTeaPHPFramework\core;
 
 class FrameworkCache
 {
@@ -79,6 +79,7 @@ class FrameworkCache
         {
             case self::DBTYPE_SQL:
                 $autocommit = $this->m_sqlSession->getAutocommit();
+                $this->m_sqlSession->setAutocommit(false);
                 $this->m_sqlSession->begin_transaction();
                 $stmt = $this->m_sqlSession->prepare("INSERT INTO `".$this->m_oCore->_getFrameworkSqlTable('cache')."` (`key`,`data`,`assist`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `data`=?, `assist`=?");
                 foreach($pairs as $key => $value)
@@ -114,6 +115,37 @@ class FrameworkCache
     public function set($key, &$value)
     {
         return $this->setEx($key, $value);
+    }
+
+    public function del($keySearchPhrase)
+    {
+        switch($this->m_dbtype)
+        {
+            case self::DBTYPE_SQL:
+                $keySearchPhrase = str_replace("*", "%", $keySearchPhrase);
+                $autocommit = $this->m_sqlSession->getAutocommit();
+                $this->m_sqlSession->setAutocommit(true);
+                $dbres = $this->m_sqlSession->queryRaw("DELETE FROM `".$this->m_oCore->_getFrameworkSqlTable('cache')."` WHERE `key` LIKE ?", array($keySearchPhrase));
+                $dbres->close();
+                $this->m_sqlSession->setAutocommit($autocommit);
+                return true;
+            case self::DBTYPE_REDIS:
+                $it = 0;
+                $deleteKeys = array();
+                do {
+                    $scanres = $this->m_redisSession->scan($it, array('MATCH' => addslashes($keySearchPhrase), 'COUNT' => 100));
+                    if($scanres)
+                    {
+                        $it = $scanres[0];
+                        foreach($scanres[1] as $strKey)
+                        {
+                            $deleteKeys[] = $strKey;
+                        }
+                    }
+                } while ($scanres && $it > 0);
+                return $this->m_redisSession->del($deleteKeys);
+        }
+        return false;
     }
 
     public function getViewCache($lang, $name, $modifiedtime)

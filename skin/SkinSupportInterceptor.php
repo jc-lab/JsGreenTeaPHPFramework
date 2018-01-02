@@ -13,7 +13,7 @@
 
 namespace JsGreenTeaPHPFramework\skin;
 
-class SkinSupportInterceptor extends \JsGreenTeaPHPFramework\HandlerInterceptor
+class SkinSupportInterceptor extends \JsGreenTeaPHPFramework\Core\HandlerInterceptor
 {
     private $m_skinViewPath = "skin/";
     private $m_skinResPath = "skin/";

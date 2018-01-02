@@ -13,7 +13,7 @@
 
 namespace JsGreenTeaPHPFramework\i18n;
 
-class AcceptHeaderLocaleResolver implements \JsGreenTeaPHPFramework\LocaleResolver
+class AcceptHeaderLocaleResolver implements LocaleResolver
 {
     public $availableLocales;
 

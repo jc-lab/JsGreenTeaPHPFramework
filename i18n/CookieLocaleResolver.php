@@ -13,7 +13,7 @@
 
 namespace JsGreenTeaPHPFramework\i18n;
 
-class CookieLocaleResolver implements \JsGreenTeaPHPFramework\LocaleResolver
+class CookieLocaleResolver implements LocaleResolver
 {
     private $m_cookieName;
     private $m_cookieDomain;
@@ -47,7 +47,7 @@ class CookieLocaleResolver implements \JsGreenTeaPHPFramework\LocaleResolver
     {
         if(!$this->m_locale)
         {
-            $this->m_locale = new \JsGreenTeaPHPFramework\Locale();
+            $this->m_locale = new \JsGreenTeaPHPFramework\Core\Locale();
             if(isset($_COOKIE[$this->m_cookieName]) && strlen($_COOKIE[$this->m_cookieName]) > 0)
             {
                 $this->m_locale->setLocale($_COOKIE[$this->m_cookieName]);
@@ -63,7 +63,7 @@ class CookieLocaleResolver implements \JsGreenTeaPHPFramework\LocaleResolver
         if(gettype($locale) == "string")
         {
             if(!$this->m_locale) {
-                $this->m_locale = new \JsGreenTeaPHPFramework\Locale();
+                $this->m_locale = new \JsGreenTeaPHPFramework\Core\Locale();
             }
             $this->m_locale->setLocale($locale);
         }else{
