@@ -77,15 +77,15 @@ class OperatorComputeObject
 
     private function greaterOpr($opr1, $opr2)
     {
-        return false;
-        /*
         if($opr1 == '*' || $opr1 == '/')
         {
-            return (($opr2 == '+') || ($opr2 == '-'));
+            if(($opr2 == '+') || ($opr2 == '-'))
+                return true;
+            else
+                return false;
         }else{
-            // opr1 == '+' || opr1 == '-'
             return false;
-        }*/
+        }
     }
 
     private function myEval($evaltext)
@@ -210,7 +210,8 @@ class OperatorComputeObject
 
                     if($tidx == 1)
                     {
-                        $frontpadding = $j;
+                        $frontpadding = 0;
+                        //$frontpadding = $j;
                         $tlen = strlen($buf);
                         for($k=$prev + $frontpadding; $k < $tlen; $k++)
                         {

@@ -80,6 +80,7 @@ class Session
             array(
                 $this->m_session_id, $this->m_remoteip, $_SERVER['HTTP_USER_AGENT'], $this->m_remoteip, $this->m_remoteip
             ));
+
         if($dbrow = $dbres->fetch_array())
         {
             // Existing

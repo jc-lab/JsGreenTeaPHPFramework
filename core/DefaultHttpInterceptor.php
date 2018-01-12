@@ -105,6 +105,8 @@ class DefaultHttpInterceptor extends HandlerInterceptor
             $oParser = new \JsGreenTeaPHPFramework\util\OperatorComputeObject();
             $oParser->setOperandCallback(array($this, '_interceptorOperandProc'), array(self::getCore()->_getFrameworkInternalObject('authenticationManager')));
             $isPermited = $oParser->parse($matchedIntercept['access']->__toString());
+            if(!$isPermited)
+                throw new AccessDeniedException();
             return $isPermited ? true : false;
         }
         return true;

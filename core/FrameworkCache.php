@@ -39,6 +39,33 @@ class FrameworkCache
         }
     }
 
+    public function getRaw($key)
+    {
+        switch($this->m_dbtype)
+        {
+            case self::DBTYPE_SQL:
+                $dbres = $this->m_sqlSession->queryRaw("SELECT `data` FROM `".$this->m_oCore->_getFrameworkSqlTable('cache')."` WHERE `key`=?", array($key));
+                $dbrow = $dbres->fetch_array(MYSQLI_NUM);
+                return $dbrow[0];
+            case self::DBTYPE_REDIS:
+                return substr($this->m_redisSession->get($this->m_oCore->_getFrameworkRedisKey($key)), 1);
+        }
+        return false;
+    }
+
+    public function setRaw($key, $value)
+    {
+        switch($this->m_dbtype)
+        {
+            case self::DBTYPE_SQL:
+                return $this->m_sqlSession->queryRaw("INSERT INTO `".$this->m_oCore->_getFrameworkSqlTable('cache')."` (`key`,`data`,`assist`) VALUES (?, ?, 0) ON DUPLICATE KEY UPDATE `data`=?",
+                    array($key, $value, $value));
+            case self::DBTYPE_REDIS:
+                return $this->m_redisSession->set($this->m_oCore->_getFrameworkRedisKey($key), ';'.$value);
+        }
+        return false;
+    }
+
     public function getEx($key)
     {
         switch($this->m_dbtype)
@@ -48,7 +75,7 @@ class FrameworkCache
                 $dbrow = $dbres->fetch_array(MYSQLI_NUM);
                 return $dbrow;
             case self::DBTYPE_REDIS:
-                $serializedData = $this->m_redisSession->get($key);
+                $serializedData = $this->m_redisSession->get($this->m_oCore->_getFrameworkRedisKey($key));
                 if(!$serializedData)
                     return NULL;
                 if(gettype($serializedData) == "string")
@@ -94,7 +121,7 @@ class FrameworkCache
                 $redisdict = array();
                 foreach($pairs as $key => $value)
                 {
-                    $redisdict[$key] = json_encode(array($value[0], $value[1]), JSON_UNESCAPED_UNICODE);
+                    $redisdict[$this->m_oCore->_getFrameworkRedisKey($key)] = json_encode(array($value[0], $value[1]), JSON_UNESCAPED_UNICODE);
                 }
                 return $this->m_redisSession->mset($redisdict);
         }
@@ -132,6 +159,7 @@ class FrameworkCache
             case self::DBTYPE_REDIS:
                 $it = 0;
                 $deleteKeys = array();
+                $keySearchPhrase = $this->m_oCore->_getFrameworkRedisKey($keySearchPhrase);
                 do {
                     $scanres = $this->m_redisSession->scan($it, array('MATCH' => addslashes($keySearchPhrase), 'COUNT' => 100));
                     if($scanres)

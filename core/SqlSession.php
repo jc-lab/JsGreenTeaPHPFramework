@@ -78,22 +78,20 @@ class SqlSession
     // return Result class
     public function queryRaw($sql, $parameters = NULL, $isWriter = false)
     {
-        if($parameters)
+        $stmt = $this->m_dbconn->prepare($sql);
+        if(!$stmt)
         {
-            $stmt = $this->m_dbconn->prepare($sql);
-            if(!$stmt)
-            {
-                $this->errno = $this->m_dbconn->errno;
-                $this->error = $this->m_dbconn->error;
-                return false;
-            }
+            $this->errno = $this->m_dbconn->errno;
+            $this->error = $this->m_dbconn->error;
+            return false;
+        }
 
+        if($parameters) {
             $bind_param_args = array();
             $param_types = '';
-            for($i=0; $i<count($parameters); $i++) {
+            for ($i = 0; $i < count($parameters); $i++) {
                 $strtype = strtolower(gettype($parameters[$i]));
-                switch($strtype)
-                {
+                switch ($strtype) {
                     case 'integer':
                         $param_types .= 'i';
                         break;
@@ -106,23 +104,20 @@ class SqlSession
                 }
             }
             $bind_param_args[] = $param_types;
-            for($i=0; $i<count($parameters); $i++) {
+            for ($i = 0; $i < count($parameters); $i++) {
                 $bind_param_args[] = &$parameters[$i];
             }
             call_user_func_array(array($stmt, 'bind_param'), $bind_param_args);
-
-            if(!$stmt->execute())
-            {
-                $this->errno = $this->m_dbconn->errno;
-                $this->error = $this->m_dbconn->error;
-                return false;
-            }
-
-            return new \JsGreenTeaPHPFramework\SqlSession\Result($stmt);
-        }else{
-            $res = $this->m_dbconn->query($sql);
-            return $res;
         }
+
+        if(!$stmt->execute())
+        {
+            $this->errno = $this->m_dbconn->errno;
+            $this->error = $this->m_dbconn->error;
+            return false;
+        }
+
+        return new \JsGreenTeaPHPFramework\SqlSession\Result($stmt);
     }
     // $dbres = queryRaw(sql);
     // $dbres->fetch_array();
@@ -137,6 +132,164 @@ class SqlSession
         }
         $stmt = new \JsGreenTeaPHPFramework\SqlSession\Statment($this, $nativestmt, $sql);
         return $stmt;
+    }
+
+    public function insert($tblname, $data, $duplicateUpdateKey = NULL)
+    {
+        $sql = "INSERT INTO `$tblname` (";
+        $pidx = 1;
+        $params = array("");
+        $tmp = false;
+        foreach($data as $key => $value)
+        {
+            if($tmp)
+                $sql .= ", ";
+            else
+                $tmp = true;
+            $sql .= "`$key`";
+            $params[$pidx++] = &$data[$key];
+
+            if(is_integer($value) || is_long($value))
+                $params[0] .= 'i';
+            else if(is_float($value) || is_double($value))
+                $params[0] .= 'd';
+            else
+                $params[0] .= 's';
+        }
+        $sql .= ") VALUES (";
+        $tmp = false;
+        foreach($data as $key => $value)
+        {
+            if($tmp)
+                $sql .= ", ";
+            else
+                $tmp = true;
+            $sql .= "?";
+        }
+        $sql .= ")";
+        if($duplicateUpdateKey)
+        {
+            $sql .= " ON DUPLICATE KEY UPDATE ";
+            $tmp = false;
+            foreach($data as $key => $value)
+            {
+                if($key != $duplicateUpdateKey) {
+                    if ($tmp)
+                        $sql .= ", ";
+                    else
+                        $tmp = true;
+                    $sql .= "`$key`=?";
+                    $params[$pidx++] = &$data[$key];
+
+                    if(is_integer($value) || is_long($value))
+                        $params[0] .= 'i';
+                    else if(is_float($value) || is_double($value))
+                        $params[0] .= 'd';
+                    else
+                        $params[0] .= 's';
+                }
+            }
+        }
+
+        $stmt = $this->m_dbconn->prepare($sql);
+        if(!$stmt) {
+            $this->errno = $this->m_dbconn->errno;
+            $this->error = $this->m_dbconn->error;
+            return NULL;
+        }
+
+        $result = NULL;
+        do {
+            if (!call_user_func_array(array($stmt, "bind_param"), $params)) {
+                break;
+            }
+
+            if (!$stmt->execute()) {
+                break;
+            }
+
+            $result = new \JsGreenTeaPHPFramework\SqlSession\Result($stmt);
+            $stmt->reset();
+        }while(false);
+
+        if(!$result)
+            $result = new \JsGreenTeaPHPFramework\SqlSession\Result($stmt);
+
+        return $result;
+    }
+
+    public function update($tblname, $data, $where)
+    {
+
+        $sql = "UPDATE `$tblname` SET ";
+        $pidx = 1;
+        $params = array("");
+        $tmp = false;
+        foreach($data as $key => $value)
+        {
+            if($tmp)
+                $sql .= ", ";
+            else
+                $tmp = true;
+            $sql .= "`$key`=?";
+            $params[$pidx++] = &$data[$key];
+
+            if(is_integer($value) || is_long($value))
+                $params[0] .= 'i';
+            else if(is_float($value) || is_double($value))
+                $params[0] .= 'd';
+            else
+                $params[0] .= 's';
+        }
+        if($where)
+        {
+            $sql .= " WHERE ";
+            $tmp = false;
+            foreach($where as $key => $value)
+            {
+                if ($tmp)
+                    $sql .= " AND ";
+                else
+                    $tmp = true;
+                $sql .= "'$key'=?";
+                $params[$pidx++] = &$where[$key];
+
+                if(is_integer($value) || is_long($value))
+                    $params[0] .= 'i';
+                else if(is_float($value) || is_double($value))
+                    $params[0] .= 'd';
+                else
+                    $params[0] .= 's';
+            }
+        }
+
+        $stmt = $this->m_dbconn->prepare($sql);
+        echo " / $sql / ";
+        print_r($params);
+        if(!$stmt) {
+            $this->errno = $this->m_dbconn->errno;
+            $this->error = $this->m_dbconn->error;
+            return NULL;
+        }
+
+        $result = NULL;
+        do {
+            if (!call_user_func_array(array($stmt, "bind_param"), $params)) {
+                break;
+            }
+
+            if (!$stmt->execute()) {
+                break;
+            }
+
+            $result = new \JsGreenTeaPHPFramework\SqlSession\Result($stmt);
+            $stmt->reset();
+        }while(false);
+
+        if(!$result)
+            $result = new \JsGreenTeaPHPFramework\SqlSession\Result($stmt);
+
+        return $result;
     }
 };
 

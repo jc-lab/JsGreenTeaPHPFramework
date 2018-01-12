@@ -143,6 +143,10 @@ class Core
             $this->m_oDefaultLocaleResolver = new AcceptHeaderLocaleResolver();
             $this->m_oAutoWiring->setObject('localeResolver', $this->m_oDefaultLocaleResolver);
         }
+
+        $this->m_oSubObjects['siteCache'] = new SiteCache($this->m_oFrameworkCache);
+        $this->_initFrameworkObject($this->m_oSubObjects['siteCache']);
+        $this->m_oAutoWiring->setObject('siteCache', $this->m_oSubObjects['siteCache']);
     }
 
     // Function to get the client ip address

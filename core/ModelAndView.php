@@ -76,7 +76,7 @@ class ModelAndView
     {
         foreach($__modelbindparams as $key => $value)
         {
-            $$key = &$value;
+            $$key = &$__modelbindparams[$key];
         }
         ob_start();
         include($__viewfilepath);
