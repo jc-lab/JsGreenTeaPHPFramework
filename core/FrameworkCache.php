@@ -45,7 +45,7 @@ class FrameworkCache
         {
             case self::DBTYPE_SQL:
                 $dbres = $this->m_sqlSession->queryRaw("SELECT `data` FROM `".$this->m_oCore->_getFrameworkSqlTable('cache')."` WHERE `key`=?", array($key));
-                $dbrow = $dbres->fetch_array(MYSQLI_NUM);
+                $dbrow = $dbres->fetch_array(\JsGreenTeaPHPFramework\core\SqlSession::FLAG_NUM);
                 return $dbrow[0];
             case self::DBTYPE_REDIS:
                 return substr($this->m_redisSession->get($this->m_oCore->_getFrameworkRedisKey($key)), 1);
@@ -72,7 +72,7 @@ class FrameworkCache
         {
             case self::DBTYPE_SQL:
                 $dbres = $this->m_sqlSession->queryRaw("SELECT `data`,`assist` FROM `".$this->m_oCore->_getFrameworkSqlTable('cache')."` WHERE `key`=?", array($key));
-                $dbrow = $dbres->fetch_array(MYSQLI_NUM);
+                $dbrow = $dbres->fetch_array(\JsGreenTeaPHPFramework\core\SqlSession::FLAG_NUM);
                 return $dbrow;
             case self::DBTYPE_REDIS:
                 $serializedData = $this->m_redisSession->get($this->m_oCore->_getFrameworkRedisKey($key));

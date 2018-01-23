@@ -13,7 +13,7 @@
 
 namespace JsGreenTeaPHPFramework\i18n;
 
-class LocaleChangeInterceptor extends \JsGreenTeaPHPFramework\Core\HandlerInterceptor
+class LocaleChangeInterceptor extends \JsGreenTeaPHPFramework\core\HandlerInterceptor
 {
     private $m_paramName;
 

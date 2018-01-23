@@ -13,7 +13,7 @@
 
 namespace JsGreenTeaPHPFramework\security\csrf;
 
-class CsrfInterceptor extends \JsGreenTeaPHPFramework\Core\HandlerInterceptor
+class CsrfInterceptor extends \JsGreenTeaPHPFramework\core\HandlerInterceptor
 {
     private $m_csrfManager;
     private $m_currentToken = NULL;

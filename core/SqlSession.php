@@ -36,6 +36,7 @@ class SqlSession
         $this->m_dbconn = new \mysqli($hostname, $username, $passwd, $dbname, $port, $socket);
         $this->connect_errno = $this->m_dbconn->connect_errno;
         $this->connect_error = $this->m_dbconn->connect_error;
+	    $this->m_dbconn->set_charset("utf8");
     }
 
     public function close()
@@ -76,7 +77,7 @@ class SqlSession
     }
 
     // return Result class
-    public function queryRaw($sql, $parameters = NULL, $isWriter = false)
+    public function queryRaw($sql, $parameters = NULL, $bStoreResult = true)
     {
         $stmt = $this->m_dbconn->prepare($sql);
         if(!$stmt)
@@ -114,13 +115,17 @@ class SqlSession
         {
             $this->errno = $this->m_dbconn->errno;
             $this->error = $this->m_dbconn->error;
+            $stmt->close();
             return false;
+        }
+
+        if($bStoreResult)
+        {
+            $stmt->store_result();
         }
 
         return new \JsGreenTeaPHPFramework\SqlSession\Result($stmt);
     }
-    // $dbres = queryRaw(sql);
-    // $dbres->fetch_array();
 
     public function prepare($sql)
     {
@@ -214,6 +219,8 @@ class SqlSession
 
         if(!$result)
             $result = new \JsGreenTeaPHPFramework\SqlSession\Result($stmt);
+        else
+            $stmt->close();
 
         return $result;
     }
@@ -288,6 +295,8 @@ class SqlSession
 
         if(!$result)
             $result = new \JsGreenTeaPHPFramework\SqlSession\Result($stmt);
+        else
+            $stmt->close();
 
         return $result;
     }
@@ -316,6 +325,20 @@ class Statment
         $this->m_session = $session;
         $this->m_stmt = $nativestmt;
         $this->m_sql = $sql;
+    }
+
+    function __destruct()
+    {
+        $this->close();
+    }
+
+    public function close()
+    {
+        if($this->m_stmt) {
+            $this->m_stmt->reset();
+            $this->m_stmt->close();
+            $this->m_stmt = NULL;
+        }
     }
 
     private function _copyStates()
@@ -383,7 +406,9 @@ class Result
     public $error = NULL;
     public $insert_id = -1;
 
-    public function __construct($stmt)
+    public $num_rows = 0;
+
+    function __construct($stmt)
     {
         $this->m_stmt = $stmt;
 
@@ -393,12 +418,21 @@ class Result
         $this->error = $stmt->error;
         $this->insert_id = $stmt->insert_id;
         $this->m_numOfCols = $stmt->field_count;
+        $this->num_rows = $stmt->num_rows;
+    }
+
+    function __destruct()
+    {
+        $this->close();
     }
 
     public function close()
     {
-        $this->m_stmt->reset();
-        $this->m_stmt->close();
+        if($this->m_stmt) {
+            $this->m_stmt->reset();
+            $this->m_stmt->close();
+            $this->m_stmt = NULL;
+        }
     }
 
     public function fetch_array($flags = \JsGreenTeaPHPFramework\core\SqlSession::FLAG_ASSOC)

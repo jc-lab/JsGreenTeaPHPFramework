@@ -13,7 +13,7 @@
 
 namespace JsGreenTeaPHPFramework\security\authentication\encoding;
 
-class BasePasswordEncoder extends \JsGreenTeaPHPFramework\Core\FrameworkObject
+class BasePasswordEncoder extends \JsGreenTeaPHPFramework\core\FrameworkObject
 {
     public static function getSaltPrefix($algorithm)
     {

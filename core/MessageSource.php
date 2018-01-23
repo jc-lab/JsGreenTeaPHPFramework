@@ -42,6 +42,7 @@ class MessageSource extends FrameworkObject
 
     public function getMessage($name, $parameters, $locale)
     {
+        $name = strtolower($name);
         $oFrameworkCache = self::getFrameworkCache();
         if(isset($this->m_cache[$name]))
         {
@@ -101,11 +102,11 @@ class MessageSource extends FrameworkObject
                 foreach($xmlObject->string as $item)
                 {
                     $attrs = $item->attributes();
-                    $name = $attrs['name']->__toString();
-                    if(!array_key_exists($name, $this->m_cache)) {
-                        $cachekey = 'msgsrc:'.$filenamehash.':'.$name;
+                    $attr_name = strtolower($attrs['name']->__toString());
+                    if(!array_key_exists($attr_name, $this->m_cache)) {
+                        $cachekey = 'msgsrc:'.$filenamehash.':'.$attr_name;
                         $items[$cachekey] = array($item->__toString(), $filestat['mtime']);
-                        $this->m_cache[$name] = $item->__toString();
+                        $this->m_cache[$attr_name] = $item->__toString();
                     }
                 }
                 if(count($items) > 0) {
