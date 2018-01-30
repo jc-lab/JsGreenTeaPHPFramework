@@ -71,6 +71,11 @@ class Session
 
         $sqlSession = $this->m_oCore->_getFrameworkSqlSession();
 
+        if(isset($_SERVER['HTTP_USER_AGENT']))
+            $useragent = $_SERVER['HTTP_USER_AGENT'];
+        else
+            $useragent = NULL;
+
         // Query and Update
         $dbres = $sqlSession->queryRaw("SELECT * FROM `".$this->m_oCore->_getFrameworkSqlTable('sessions')."` WHERE `sid`=X'".$this->m_session_idhex."'");
         $dbres_update = $sqlSession->queryRaw(
@@ -78,7 +83,7 @@ class Session
                 "(`sid`,`created_time`,`created_ip`,`created_ua`,`latest_time`,`latest_ip`) VALUES (?, UTC_TIMESTAMP(), ?, ?, UTC_TIMESTAMP(), ?) ".
                 "ON DUPLICATE KEY UPDATE `latest_time`=UTC_TIMESTAMP(), `latest_ip`=?",
             array(
-                $this->m_session_id, $this->m_remoteip, $_SERVER['HTTP_USER_AGENT'], $this->m_remoteip, $this->m_remoteip
+                $this->m_session_id, $this->m_remoteip, $useragent, $this->m_remoteip, $this->m_remoteip
             ));
 
         if($dbrow = $dbres->fetch_array())

@@ -76,6 +76,11 @@ class SqlSession
         return $this->m_dbconn->rollback();
     }
 
+    public function real_escape_string($text)
+    {
+        return $this->m_dbconn->real_escape_string($text);
+    }
+
     // return Result class
     public function queryRaw($sql, $parameters = NULL, $bStoreResult = true)
     {

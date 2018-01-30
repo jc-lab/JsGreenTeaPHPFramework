@@ -38,7 +38,7 @@ class Authentication
         return $this->m_credentials;
     }
 
-    public function getDetails($user)
+    public function getDetails()
     {
         return $this->m_userDetails;
     }

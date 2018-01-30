@@ -158,39 +158,11 @@ class _ContentVariableReplaceCallback
         {
             $result = call_user_func($item[0], $type, $matches[1], $item[1]);
             if($result)
-                break;
+                return $result;
         }
-        if(!$result) {
-            if ($type == '$') {
-                $result = $this->oCore->getFrameworkAttribute($matches[1]);
-                if (!$result) {
-                    $result = @$this->attributes[$matches[1]];
-                }
-                return $result;
-            } else if ($type == '#') {
-                $arr = explode('/', $matches[1], 2);
-                if (count($arr) > 1) {
-                    $type = strtolower($arr[0]);
-                    if (strcmp($type, "server") == 0) {
-                        return $this->oCore->getServerRes($arr[1]);
-                    } else if (strcmp($type, "string") != 0) {
-                        return NULL;
-                    }
-                    $name = $arr[0];
-                } else {
-                    $name = $matches[1];
-                }
-                $result = $this->oResourceManager->getResString($name);
-                if (!$result) {
-                    if (!$this->oMessageSource) {
-                        $this->oMessageSource = $this->oAutoWiring->getObject('messageSource');
-                    }
-                    if ($this->oMessageSource) {
-                        $result = $this->oMessageSource->getMessage($name, NULL, $this->locale);
-                    }
-                }
-                return $result;
-            }
+        $result = $this->oCore->resolveRes($matches[0]);
+        if (!$result) {
+            $result = @$this->attributes[$matches[1]];
         }
         return $result;
     }

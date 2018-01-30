@@ -43,19 +43,12 @@ class Core
 
     private $m_oSubObjects = array();
 
-    private $m_pageSession = NULL;
-
     public function &_getFrameworkInternalObject($name)
     {
         return $this->m_oSubObjects[$name];
     }
 
-    public function &_getPageSession()
-    {
-        return $this->m_pageSession;
-    }
-
-    private function __construct($websitename, $rooturi)
+    public function __construct($websitename, $rooturi)
     {
         $rooturi = str_replace('\\', '/', $rooturi);
         $this->m_workdir = 'greentea.'.$websitename;
@@ -195,6 +188,36 @@ class Core
             return $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'].$siteroot;
         }
         return NULL;
+    }
+
+    public function resolveRes($text)
+    {
+        $type = substr($text, 0, 1);
+        $name = substr($text, 2, strlen($text)-3);
+        if ($type == '$') {
+            $result = $this->getFrameworkAttribute($name);
+            return $result;
+        } else if ($type == '#') {
+            $arr = explode('/', $name, 2);
+            if (count($arr) > 1) {
+                if (strcmp($arr[0], "server") == 0) {
+                    return $this->getServerRes($arr[1]);
+                } else if (strcmp($arr[0], "string") != 0) {
+                    return NULL;
+                }
+                $name = $arr[1];
+            }/* else {
+                $name = $text;
+            }*/
+            $result = $this->m_oResourceManager->getResString($name);
+            if (!$result) {
+                $oMessageSource = $this->m_oAutoWiring->getObject('messageSource');
+                if ($oMessageSource) {
+                    $result = $oMessageSource->getMessage($name, NULL, $this->locale);
+                }
+            }
+            return $result;
+        }
     }
 
     public static function getTickCount()
@@ -379,20 +402,18 @@ class Core
         return $this->m_workdir;
     }
 
-    public static function index($websitename, $rooturi)
+    public function index($websitename, $rooturi)
     {
-        $core = new Core($websitename, $rooturi);
-        $request = new Request($core);
-        $response = new HttpResponse($core);
-        $core->m_pageSession = $request->getPageSession();
-        $core->m_pageSession['session'] = $request->getSession();
-        $core->_getFrameworkInternalObject('authenticationManager')->checkLogon();
+        $request = new Request($this);
+        $response = new HttpResponse($this);
+        $pageSession = &$request->getPageSession();
+        $pageSession['session'] = $request->getSession();
+        $this->_getFrameworkInternalObject('authenticationManager')->checkLogon($request);
         try {
-            $core->show($request, $response);
+            $this->show($request, $response);
         }catch(AccessDeniedException $ex){
             echo "AccessDeniedException";
         }
-        $core->m_pageSession = NULL;
     }
 };
 

@@ -47,7 +47,8 @@ class DefaultHttpInterceptor extends HandlerInterceptor
 
     public function _interceptorOperandProc($type, $name, $params, $cbparam)
     {
-        $authenticationManager = &$cbparam[0];
+        $request = &$cbparam[0];
+        $authenticationManager = &$cbparam[1];
         $name = strtolower($name);
         if($name == "permitall")
         {
@@ -58,7 +59,7 @@ class DefaultHttpInterceptor extends HandlerInterceptor
             return 0;
         }
 
-        $pageSession = &self::getCore()->_getPageSession();
+        $pageSession = &$request->getPageSession();
         if(isset($pageSession['userdetails']))
         {
             $userdetails = &$pageSession['userdetails'];
@@ -103,7 +104,7 @@ class DefaultHttpInterceptor extends HandlerInterceptor
         if($matchedIntercept)
         {
             $oParser = new \JsGreenTeaPHPFramework\util\OperatorComputeObject();
-            $oParser->setOperandCallback(array($this, '_interceptorOperandProc'), array(self::getCore()->_getFrameworkInternalObject('authenticationManager')));
+            $oParser->setOperandCallback(array($this, '_interceptorOperandProc'), array(&$request, self::getCore()->_getFrameworkInternalObject('authenticationManager')));
             $isPermited = $oParser->parse($matchedIntercept['access']->__toString());
             if(!$isPermited)
                 throw new AccessDeniedException();
