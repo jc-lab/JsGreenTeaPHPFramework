@@ -48,6 +48,11 @@ class Core
         return $this->m_oSubObjects[$name];
     }
 
+    public function &getAutoWiredObject($id)
+    {
+        return $this->m_oAutoWiring->getObject($id);
+    }
+
     public function __construct($websitename, $rooturi)
     {
         $rooturi = str_replace('\\', '/', $rooturi);
@@ -186,11 +191,14 @@ class Core
                     $siteroot = substr($siteroot, $len);
             }
             return $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'].$siteroot;
+        }else if(strcmp($name, 'SESSION_COOKIE_NAME') == 0)
+        {
+            return $this->m_oConfig->session_cookiename;
         }
         return NULL;
     }
 
-    public function resolveRes($text)
+    public function resolveRes($text, $locale = null)
     {
         $type = substr($text, 0, 1);
         $name = substr($text, 2, strlen($text)-3);
@@ -213,7 +221,7 @@ class Core
             if (!$result) {
                 $oMessageSource = $this->m_oAutoWiring->getObject('messageSource');
                 if ($oMessageSource) {
-                    $result = $oMessageSource->getMessage($name, NULL, $this->locale);
+                    $result = $oMessageSource->getMessage($name, NULL, $locale);
                 }
             }
             return $result;
@@ -269,6 +277,13 @@ class Core
     public function &_getAutoWiring()
     {
         return $this->m_oAutoWiring;
+    }
+
+    public function &createSessionObject()
+    {
+        $session = new Session($this, $this->getConfig());
+        $this->m_oAutoWiring->applyAutowiringToClass(get_class($session), $session);
+        return $session;
     }
 
     public function setUrlInterceptors($interceptors)
@@ -402,7 +417,7 @@ class Core
         return $this->m_workdir;
     }
 
-    public function index($websitename, $rooturi)
+    public function index($rooturi)
     {
         $request = new Request($this);
         $response = new HttpResponse($this);

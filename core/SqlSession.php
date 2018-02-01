@@ -81,6 +81,11 @@ class SqlSession
         return $this->m_dbconn->real_escape_string($text);
     }
 
+    public function nativeQuery($sql)
+    {
+        return $this->m_dbconn->query($sql);
+    }
+
     // return Result class
     public function queryRaw($sql, $parameters = NULL, $bStoreResult = true)
     {
@@ -396,12 +401,13 @@ class Statment
 
     public function get_result()
     {
-        return new \JsGreenTeaPHPFramework\SqlSession\Result($this->m_stmt);
+        return new \JsGreenTeaPHPFramework\SqlSession\Result($this->m_stmt, false);
     }
 };
 
 class Result
 {
+    private $m_autodestructstmt;
     private $m_stmt;
     private $m_numOfCols;
 
@@ -413,8 +419,9 @@ class Result
 
     public $num_rows = 0;
 
-    function __construct($stmt)
+    function __construct($stmt, $autodestructstmt = true)
     {
+        $this->m_autodestructstmt = $autodestructstmt;
         $this->m_stmt = $stmt;
 
         $this->affected_rows = $stmt->affected_rows;
@@ -433,7 +440,7 @@ class Result
 
     public function close()
     {
-        if($this->m_stmt) {
+        if($this->m_autodestructstmt && $this->m_stmt) {
             $this->m_stmt->reset();
             $this->m_stmt->close();
             $this->m_stmt = NULL;

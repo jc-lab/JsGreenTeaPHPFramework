@@ -38,22 +38,22 @@ class Session
         $this->m_cachedValues = array();
     }
 
-    public function _init()
+    public function init()
     {
         if (isset($_SERVER['HTTP_CLIENT_IP']) && $_SERVER['HTTP_CLIENT_IP'])
-            $this->m_remoteip = $_SERVER['HTTP_CLIENT_IP'];
+            $remoteip = $_SERVER['HTTP_CLIENT_IP'];
         else if(isset($_SERVER['HTTP_X_FORWARDED_FOR']) && $_SERVER['HTTP_X_FORWARDED_FOR'])
-            $this->m_remoteip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+            $remoteip = $_SERVER['HTTP_X_FORWARDED_FOR'];
         else if(isset($_SERVER['HTTP_X_FORWARDED']) && $_SERVER['HTTP_X_FORWARDED'])
-            $this->m_remoteip = $_SERVER['HTTP_X_FORWARDED'];
+            $remoteip = $_SERVER['HTTP_X_FORWARDED'];
         else if(isset($_SERVER['HTTP_FORWARDED_FOR']) && $_SERVER['HTTP_FORWARDED_FOR'])
-            $this->m_remoteip = $_SERVER['HTTP_FORWARDED_FOR'];
+            $remoteip = $_SERVER['HTTP_FORWARDED_FOR'];
         else if(isset($_SERVER['HTTP_FORWARDED']) && $_SERVER['HTTP_FORWARDED'])
-            $this->m_remoteip = $_SERVER['HTTP_FORWARDED'];
+            $remoteip = $_SERVER['HTTP_FORWARDED'];
         else if(isset($_SERVER['REMOTE_ADDR']) && $_SERVER['REMOTE_ADDR'])
-            $this->m_remoteip = $_SERVER['REMOTE_ADDR'];
+            $remoteip = $_SERVER['REMOTE_ADDR'];
         else
-            $this->m_remoteip = '*UNKNOWN';
+            $remoteip = '*UNKNOWN';
 
         if(isset($_COOKIE[$this->m_oConfig->session_cookiename]))
         {
@@ -76,14 +76,27 @@ class Session
         else
             $useragent = NULL;
 
+        $this->attachSessionId(NULL, $useragent, $remoteip);
+    }
+
+    public function attachSessionId($sessionid, $useragent = NULL, $remoteip = NULL)
+    {
+        $sqlSession = $this->m_oCore->_getFrameworkSqlSession();
+
+        if($sessionid) {
+            $this->m_session_id = $sessionid;
+            $this->m_session_idhex = bin2hex($sessionid);
+        }
+        $this->m_remoteip = $remoteip;
+
         // Query and Update
         $dbres = $sqlSession->queryRaw("SELECT * FROM `".$this->m_oCore->_getFrameworkSqlTable('sessions')."` WHERE `sid`=X'".$this->m_session_idhex."'");
         $dbres_update = $sqlSession->queryRaw(
             "INSERT INTO `".$this->m_oCore->_getFrameworkSqlTable('sessions')."` ".
-                "(`sid`,`created_time`,`created_ip`,`created_ua`,`latest_time`,`latest_ip`) VALUES (?, UTC_TIMESTAMP(), ?, ?, UTC_TIMESTAMP(), ?) ".
-                "ON DUPLICATE KEY UPDATE `latest_time`=UTC_TIMESTAMP(), `latest_ip`=?",
+            "(`sid`,`created_time`,`created_ip`,`created_ua`,`latest_time`,`latest_ip`) VALUES (?, UTC_TIMESTAMP(), ?, ?, UTC_TIMESTAMP(), ?) ".
+            "ON DUPLICATE KEY UPDATE `latest_time`=UTC_TIMESTAMP(), `latest_ip`=?",
             array(
-                $this->m_session_id, $this->m_remoteip, $useragent, $this->m_remoteip, $this->m_remoteip
+                $this->m_session_id, $remoteip, $useragent, $remoteip, $remoteip
             ));
 
         if($dbrow = $dbres->fetch_array())
@@ -117,6 +130,11 @@ class Session
             $this->m_settings_secure = false;
         else
             $this->m_settings_secure = true;
+    }
+
+    public function getSessionId()
+    {
+        return $this->m_session_idhex;
     }
 
     public function _schedule_tidySession()

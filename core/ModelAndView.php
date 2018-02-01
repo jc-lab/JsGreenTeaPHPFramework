@@ -160,7 +160,7 @@ class _ContentVariableReplaceCallback
             if($result)
                 return $result;
         }
-        $result = $this->oCore->resolveRes($matches[0]);
+        $result = $this->oCore->resolveRes($matches[0], $this->locale);
         if (!$result) {
             $result = @$this->attributes[$matches[1]];
         }
