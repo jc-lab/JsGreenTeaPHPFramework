@@ -46,6 +46,7 @@ class FrameworkCache
             case self::DBTYPE_SQL:
                 $dbres = $this->m_sqlSession->queryRaw("SELECT `data` FROM `".$this->m_oCore->_getFrameworkSqlTable('cache')."` WHERE `key`=?", array($key));
                 $dbrow = $dbres->fetch_array(\JsGreenTeaPHPFramework\core\SqlSession::FLAG_NUM);
+                $dbres->close();
                 return $dbrow[0];
             case self::DBTYPE_REDIS:
                 return substr($this->m_redisSession->get($this->m_oCore->_getFrameworkRedisKey($key)), 1);
@@ -58,8 +59,15 @@ class FrameworkCache
         switch($this->m_dbtype)
         {
             case self::DBTYPE_SQL:
-                return $this->m_sqlSession->queryRaw("INSERT INTO `".$this->m_oCore->_getFrameworkSqlTable('cache')."` (`key`,`data`,`assist`) VALUES (?, ?, 0) ON DUPLICATE KEY UPDATE `data`=?",
+                $dbres = $this->m_sqlSession->queryRaw("INSERT INTO `".$this->m_oCore->_getFrameworkSqlTable('cache')."` (`key`,`data`,`assist`) VALUES (?, ?, 0) ON DUPLICATE KEY UPDATE `data`=?",
                     array($key, $value, $value));
+                if($dbres)
+                {
+                    $dbres->close();
+                    return true;
+                }else{
+                    return false;
+                }
             case self::DBTYPE_REDIS:
                 return $this->m_redisSession->set($this->m_oCore->_getFrameworkRedisKey($key), ';'.$value);
         }
@@ -71,8 +79,9 @@ class FrameworkCache
         switch($this->m_dbtype)
         {
             case self::DBTYPE_SQL:
-                $dbres = $this->m_sqlSession->queryRaw("SELECT `data`,`assist` FROM `".$this->m_oCore->_getFrameworkSqlTable('cache')."` WHERE `key`=?", array($key));
+                $dbres = $this->m_sqlSession->queryRaw("SELECT `data`,`assist`, `flags` FROM `".$this->m_oCore->_getFrameworkSqlTable('cache')."` WHERE `key`=?", array($key), true);
                 $dbrow = $dbres->fetch_array(\JsGreenTeaPHPFramework\core\SqlSession::FLAG_NUM);
+                $dbres->close();
                 return $dbrow;
             case self::DBTYPE_REDIS:
                 $serializedData = $this->m_redisSession->get($this->m_oCore->_getFrameworkRedisKey($key));
@@ -86,15 +95,22 @@ class FrameworkCache
         return false;
     }
 
-    public function setEx($key, &$value, $assist = 0)
+    public function setEx($key, &$value, $assist = 0, $flags = 0)
     {
         switch($this->m_dbtype)
         {
             case self::DBTYPE_SQL:
-                return $this->m_sqlSession->queryRaw("INSERT INTO `".$this->m_oCore->_getFrameworkSqlTable('cache')."` (`key`,`data`,`assist`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `data`=?, `assist`=?",
-                    array($key, $value, $assist, $value, $assist));
+                $dbres = $this->m_sqlSession->queryRaw("INSERT INTO `".$this->m_oCore->_getFrameworkSqlTable('cache')."` (`key`,`data`,`assist`, `flags`) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE `data`=?, `assist`=?, `flags`=?",
+                    array($key, $value, $assist, $flags, $value, $assist, $flags));
+                if($dbres)
+                {
+                    $dbres->close();
+                    return true;
+                }else{
+                    return false;
+                }
             case self::DBTYPE_REDIS:
-                $serializedData = json_encode(array($value, $assist), JSON_UNESCAPED_UNICODE);
+                $serializedData = json_encode(array($value, $assist, $flags), JSON_UNESCAPED_UNICODE);
                 return $this->m_redisSession->set($this->m_oCore->_getFrameworkRedisKey($key), $serializedData);
         }
         return false;
@@ -108,12 +124,13 @@ class FrameworkCache
                 $autocommit = $this->m_sqlSession->getAutocommit();
                 $this->m_sqlSession->setAutocommit(false);
                 $this->m_sqlSession->begin_transaction();
-                $stmt = $this->m_sqlSession->prepare("INSERT INTO `".$this->m_oCore->_getFrameworkSqlTable('cache')."` (`key`,`data`,`assist`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `data`=?, `assist`=?");
+                $stmt = $this->m_sqlSession->prepare("INSERT INTO `".$this->m_oCore->_getFrameworkSqlTable('cache')."` (`key`,`data`,`assist`,`flags`) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE `data`=?, `assist`=?, `flags`=?");
                 foreach($pairs as $key => $value)
                 {
-                    $stmt->bind_param('ssisi', $key, $value[0], $value[1], $value[0], $value[1]);
+                    $stmt->bind_param('ssiisii', $key, $value[0], $value[1], $value[2], $value[0], $value[1], $value[2]);
                     $stmt->execute();
                 }
+                $stmt->close();
                 $this->m_sqlSession->commit();
                 $this->m_sqlSession->setAutocommit($autocommit);
                 return true;
@@ -121,7 +138,7 @@ class FrameworkCache
                 $redisdict = array();
                 foreach($pairs as $key => $value)
                 {
-                    $redisdict[$this->m_oCore->_getFrameworkRedisKey($key)] = json_encode(array($value[0], $value[1]), JSON_UNESCAPED_UNICODE);
+                    $redisdict[$this->m_oCore->_getFrameworkRedisKey($key)] = json_encode(array($value[0], $value[1], $value[2]), JSON_UNESCAPED_UNICODE);
                 }
                 return $this->m_redisSession->mset($redisdict);
         }

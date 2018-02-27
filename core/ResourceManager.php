@@ -88,7 +88,7 @@ class ResourceManager
         return @$this->m_common_settings[$name];
     }
 
-    public function getResSettingsBool($name)
+    public function getResSettingBool($name)
     {
         if(!isset($this->m_common_settings[$name]))
             return NULL;

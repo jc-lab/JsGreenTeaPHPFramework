@@ -13,64 +13,6 @@
 
 namespace JsGreenTeaPHPFramework\security\csrf;
 
-class InvalidCsrfTokenException extends \JsGreenTeaPHPFramework\core\AccessDeniedException
+class InvalidCsrfTokenException extends \Exception
 {
-    private $m_paramName = "csrfToken";
-    private $m_headerName = "Csrf-Header";
-    private $m_sessionName = "csrftoken";
-
-    public function setParamName($value)
-    {
-        $this->m_paramName = $value;
-    }
-
-    public function setHeaderName($value)
-    {
-        $this->m_headerName = $value;
-    }
-
-    public function setSessionName($value)
-    {
-        $this->m_sessionName = $value;
-    }
-
-    public function getParamName()
-    {
-        return $this->m_paramName;
-    }
-
-    public function getHeaderName()
-    {
-        return $this->m_headerName;
-    }
-
-    public function getNewToken(&$session)
-    {
-        $csrkToken = str_replace('=', '', base64_encode(openssl_random_pseudo_bytes(16)));
-        $session->setAttribute($this->m_sessionName, $csrkToken);
-        return $csrkToken;
-    }
-
-    public function validCsrf(&$session)
-    {
-        $valid = false;
-        if(isset($_GET[$this->m_paramName]))
-        {
-            $paramToken = $_GET[$this->m_paramName];
-            $valid = 2;
-        }else if(isset($_POST[$this->m_paramName]))
-        {
-            $paramToken = $_POST[$this->m_paramName];
-            $valid = 2;
-        }
-        if($valid == 2) {
-            $sessToken = $session->getAttribute($this->m_sessionName);
-            $valid = ($sessToken == $paramToken);
-        }
-        if(!$valid)
-        {
-            throw InvalidCsrfTokenException ();
-        }
-        return $valid;
-    }
 }

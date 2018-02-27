@@ -109,7 +109,7 @@ class Controller extends FrameworkObject
 
         if(!$routeinfo)
         {
-            $response->setStatus(HttpStatus::HTTP_NOT_IMPLEMENTED);
+            $response->setStatus(HttpStatus::HTTP_NOT_FOUND);
             return NULL;
         }
 

@@ -124,7 +124,7 @@ class Core
 
         $this->m_oAutoWiring->setObject('sqlSession', $this->m_oSiteSqlSession);
 
-        if($this->m_oResourceManager->getResSettingsBool("security:csrf:enabled"))
+        if($this->m_oResourceManager->getResSettingBool("security:csrf:enabled"))
         {
             $this->m_oSubObjects['security_csrfManager'] = new \JsGreenTeaPHPFramework\security\csrf\CsrfManager();
             $this->m_oSubObjects['security_csrfInterceptor'] = new \JsGreenTeaPHPFramework\security\csrf\CsrfInterceptor();
@@ -198,12 +198,12 @@ class Core
         return NULL;
     }
 
-    public function resolveRes($text, $locale = null)
+    public function resolveResOnce($text, $locale = null, $oView = null)
     {
         $type = substr($text, 0, 1);
         $name = substr($text, 2, strlen($text)-3);
         if ($type == '$') {
-            $result = $this->getFrameworkAttribute($name);
+            $result = $this->getFrameworkAttribute($name, $locale, $oView);
             return $result;
         } else if ($type == '#') {
             $arr = explode('/', $name, 2);
@@ -226,6 +226,14 @@ class Core
             }
             return $result;
         }
+    }
+
+    public function resolveRes($text, $locale = null, $oView = null, $attributes = null, $attributeCallbacks = null)
+    {
+        $oReplaceCB = new \JsGreenTeaPHPFramework\core\internal\ContentVariableReplaceCallback($this, $locale, $oView, $attributes, $attributeCallbacks);
+        $tmparr = array($text, substr($text, 2, strlen($text) - 3));
+        $content = $oReplaceCB->cbreplace($tmparr);
+        return $content;
     }
 
     public static function getTickCount()
@@ -311,9 +319,24 @@ class Core
         return $this->m_oResourceManager;
     }
 
-    public function getFrameworkAttribute($name)
+    public function getFrameworkAttribute($name, $locale = null, $oView = null)
     {
         return NULL;
+    }
+
+    public function getCommonResSetting($name)
+    {
+        $this->m_oResourceManager->getResSetting($name);
+    }
+
+    public function getCommonResSettingBool($name)
+    {
+        $this->m_oResourceManager->getResSettingBool($name);
+    }
+
+    public function getCommonResString($name)
+    {
+        return $this->m_oResourceManager->getResString($name);
     }
 
     private function show(&$request, &$response)
@@ -424,11 +447,7 @@ class Core
         $pageSession = &$request->getPageSession();
         $pageSession['session'] = $request->getSession();
         $this->_getFrameworkInternalObject('authenticationManager')->checkLogon($request);
-        try {
-            $this->show($request, $response);
-        }catch(AccessDeniedException $ex){
-            echo "AccessDeniedException";
-        }
+        $this->show($request, $response);
     }
 };
 
@@ -439,3 +458,4 @@ if(!function_exists("hex2bin"))
         return pack("H*", $input);
     }
 }
+

@@ -53,7 +53,7 @@ class SkinSupportInterceptor extends \JsGreenTeaPHPFramework\core\HandlerInterce
                 $viewfilepath = self::getCore()->getWorkDir() . '/view/' . $newviewname . '.php';
                 if(file_exists($viewfilepath))
                 {
-                    $oModelAndView->setViewName($newviewname);
+                    $oModelAndView->setViewPath($newviewname);
                 }
             }
         }

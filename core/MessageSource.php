@@ -40,14 +40,17 @@ class MessageSource extends FrameworkObject
         }
     }
 
-    public function getMessage($name, $parameters, $locale)
+    public function getMessage($name, $parameters, $locale, $bOnlyPublic = false)
     {
         $name = strtolower($name);
         $oFrameworkCache = self::getFrameworkCache();
         if(isset($this->m_cache[$name]))
         {
+            $item = &$this->m_cache[$name];
+            if($bOnlyPublic && (($item[2] & 1) == 0))
+                return NULL;
             $oReplaceCB = new \JsGreenTeaPHPFramework\MessageSource\_ContentVariableReplaceCallback($parameters);
-            $content = preg_replace_callback('/{([^}]+)}/', array($oReplaceCB, "cbreplace"), $this->m_cache[$name]);
+            $content = preg_replace_callback('/{([^}]+)}/', array($oReplaceCB, "cbreplace"), $item[0]);
             return $content;
         }
         $workdir = self::getCore()->getWorkDir();
@@ -91,7 +94,11 @@ class MessageSource extends FrameworkObject
             {
                 if($filestat['mtime'] == $cached[1])
                 {
-                    return $cached[0];
+                    if($bOnlyPublic && (($cached[2] & 1) == 0))
+                        return NULL;
+                    $oReplaceCB = new \JsGreenTeaPHPFramework\MessageSource\_ContentVariableReplaceCallback($parameters);
+                    $content = preg_replace_callback('/{([^}]+)}/', array($oReplaceCB, "cbreplace"), $cached[0]);
+                    return $content;
                 }
             }
 
@@ -103,10 +110,17 @@ class MessageSource extends FrameworkObject
                 {
                     $attrs = $item->attributes();
                     $attr_name = strtolower($attrs['name']->__toString());
+                    $attr_public = false;
+                    if(isset($attrs['public']))
+                    {
+                        $strattr_public = strtolower($attrs['public']->__toString());
+                        if($strattr_public == 'true' || $strattr_public == '1')
+                            $attr_public = true;
+                    }
                     if(!array_key_exists($attr_name, $this->m_cache)) {
                         $cachekey = 'msgsrc:'.$filenamehash.':'.$attr_name;
-                        $items[$cachekey] = array($item->__toString(), $filestat['mtime']);
-                        $this->m_cache[$attr_name] = $item->__toString();
+                        $items[$cachekey] = array($item->__toString(), $filestat['mtime'], $attr_public ? 1 : 0);
+                        $this->m_cache[$attr_name] = $items[$cachekey];
                     }
                 }
                 if(count($items) > 0) {
@@ -116,8 +130,11 @@ class MessageSource extends FrameworkObject
         }
         if(isset($this->m_cache[$name]))
         {
+            $item = &$this->m_cache[$name];
+            if($bOnlyPublic && (($item[2] & 1) == 0))
+                return NULL;
             $oReplaceCB = new \JsGreenTeaPHPFramework\MessageSource\_ContentVariableReplaceCallback($parameters);
-            $content = preg_replace_callback('/{([^}]+)}/', array($oReplaceCB, "cbreplace"), $this->m_cache[$name]);
+            $content = preg_replace_callback('/{([^}]+)}/', array($oReplaceCB, "cbreplace"), $item[0]);
             return $content;
         }
         return NULL;

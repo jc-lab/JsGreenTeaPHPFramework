@@ -79,7 +79,7 @@ class Session
         $this->attachSessionId(NULL, $useragent, $remoteip);
     }
 
-    public function attachSessionId($sessionid, $useragent = NULL, $remoteip = NULL)
+    public function attachSessionId($sessionid, $useragent = NULL, $remoteip = NULL, $useOnlyExists = false)
     {
         $sqlSession = $this->m_oCore->_getFrameworkSqlSession();
 
@@ -90,20 +90,43 @@ class Session
         $this->m_remoteip = $remoteip;
 
         // Query and Update
-        $dbres = $sqlSession->queryRaw("SELECT * FROM `".$this->m_oCore->_getFrameworkSqlTable('sessions')."` WHERE `sid`=X'".$this->m_session_idhex."'");
-        $dbres_update = $sqlSession->queryRaw(
-            "INSERT INTO `".$this->m_oCore->_getFrameworkSqlTable('sessions')."` ".
-            "(`sid`,`created_time`,`created_ip`,`created_ua`,`latest_time`,`latest_ip`) VALUES (?, UTC_TIMESTAMP(), ?, ?, UTC_TIMESTAMP(), ?) ".
-            "ON DUPLICATE KEY UPDATE `latest_time`=UTC_TIMESTAMP(), `latest_ip`=?",
-            array(
-                $this->m_session_id, $remoteip, $useragent, $remoteip, $remoteip
-            ));
-
-        if($dbrow = $dbres->fetch_array())
+        $dbres = $sqlSession->queryRaw("SELECT * FROM `".$this->m_oCore->_getFrameworkSqlTable('sessions')."` WHERE `sid`=X'".$this->m_session_idhex."'", NULL, true);
+        if(!$useOnlyExists) {
+            for($retry = 0; $retry < 2; $retry++) {
+                $dbres_update = $sqlSession->queryRaw(
+                    "INSERT INTO `" . $this->m_oCore->_getFrameworkSqlTable('sessions') . "` " .
+                    "(`sid`,`created_time`,`created_ip`,`created_ua`,`latest_time`,`latest_ip`) VALUES (?, UTC_TIMESTAMP(), ?, ?, UTC_TIMESTAMP(), ?) " .
+                    "ON DUPLICATE KEY UPDATE `latest_time`=UTC_TIMESTAMP(), `latest_ip`=?",
+                    array(
+                        $this->m_session_id, $remoteip, $useragent, $remoteip, $remoteip
+                    ));
+                if ($dbres_update) {
+                    $dbres_update->close();
+                    break;
+                } else {
+                    if($sqlSession->errno == 1114)
+                    {
+                        $tmpdbres = $sqlSession->queryRaw("DELETE FROM `webfw_sessions` TIMESTAMPDIFF(SECOND, `latest_time`, UTC_TIMESTAMP()) > 86400");
+                        if($tmpdbres)
+                        {
+                            $tmpdbres->close();
+                        }
+                    }
+                }
+            }
+        }
+        $dbrow = $dbres->fetch_array();
+        $dbres->close();
+        if($dbrow)
         {
             // Existing
             $this->m_session_loginidx = $dbrow['logon_idx'];
+            return true;
         }
+        if($useOnlyExists)
+            return false;
+        else
+            return true;
     }
 
     public function getClientAddr() {
@@ -156,6 +179,7 @@ class Session
         {
             $droptime = gmdate('Y-m-d H:i:s', time() - $this->m_oConfig->session_timeout);
             $dbres = $this->m_fwdb->queryRaw("SELECT * FROM `".$this->m_oCore->getFrameworkTable('sessions')."` WHERE `latest_time` < '".$droptime."'");
+            $dbres->close();
             $bindata = pack('P', time());
             $oFastCache->setValue(FastFrameworkCache::CACHEID_LATEST_TIDYSESSION_TIME, $bindata);
         }

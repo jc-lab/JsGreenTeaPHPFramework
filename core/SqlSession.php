@@ -37,6 +37,9 @@ class SqlSession
         $this->connect_errno = $this->m_dbconn->connect_errno;
         $this->connect_error = $this->m_dbconn->connect_error;
 	    $this->m_dbconn->set_charset("utf8");
+
+        $this->m_dbconn->query("set tx_isolation = 'READ-COMMITTED'");
+        $this->m_dbconn->query("COMMIT");
     }
 
     public function close()
@@ -89,12 +92,10 @@ class SqlSession
     // return Result class
     public function queryRaw($sql, $parameters = NULL, $bStoreResult = true)
     {
-        $stmt = $this->m_dbconn->prepare($sql);
-        if(!$stmt)
+        $oStmt = $this->prepare($sql);
+        if(!$oStmt)
         {
-            $this->errno = $this->m_dbconn->errno;
-            $this->error = $this->m_dbconn->error;
-            return false;
+            return $oStmt;
         }
 
         if($parameters) {
@@ -118,23 +119,23 @@ class SqlSession
             for ($i = 0; $i < count($parameters); $i++) {
                 $bind_param_args[] = &$parameters[$i];
             }
-            call_user_func_array(array($stmt, 'bind_param'), $bind_param_args);
+            call_user_func_array(array($oStmt, 'bind_param'), $bind_param_args);
         }
 
-        if(!$stmt->execute())
+        if(!$oStmt->execute())
         {
-            $this->errno = $this->m_dbconn->errno;
-            $this->error = $this->m_dbconn->error;
-            $stmt->close();
+            $this->errno = $oStmt->errno;
+            $this->error = $oStmt->error;
+            $oStmt->close();
             return false;
         }
 
         if($bStoreResult)
         {
-            $stmt->store_result();
+            $oStmt->store_result();
         }
 
-        return new \JsGreenTeaPHPFramework\SqlSession\Result($stmt);
+        return new \JsGreenTeaPHPFramework\SqlSession\Result($oStmt, true);
     }
 
     public function prepare($sql)
@@ -206,31 +207,30 @@ class SqlSession
             }
         }
 
-        $stmt = $this->m_dbconn->prepare($sql);
-        if(!$stmt) {
-            $this->errno = $this->m_dbconn->errno;
-            $this->error = $this->m_dbconn->error;
-            return NULL;
+        $oStmt = $this->prepare($sql);
+        if(!$oStmt) {
+            return false;
         }
 
-        $result = NULL;
+        $result = false;
         do {
-            if (!call_user_func_array(array($stmt, "bind_param"), $params)) {
+            if (!call_user_func_array(array($oStmt, "bind_param"), $params)) {
+                $this->errno = $oStmt->errno;
+                $this->error = $oStmt->error;
                 break;
             }
 
-            if (!$stmt->execute()) {
+            if (!$oStmt->execute()) {
+                $this->errno = $oStmt->errno;
+                $this->error = $oStmt->error;
                 break;
             }
 
-            $result = new \JsGreenTeaPHPFramework\SqlSession\Result($stmt);
-            $stmt->reset();
+            $result = new \JsGreenTeaPHPFramework\SqlSession\Result($oStmt, true);
+            $oStmt->reset();
         }while(false);
-
         if(!$result)
-            $result = new \JsGreenTeaPHPFramework\SqlSession\Result($stmt);
-        else
-            $stmt->close();
+            $oStmt->close();
 
         return $result;
     }
@@ -280,33 +280,32 @@ class SqlSession
             }
         }
 
-        $stmt = $this->m_dbconn->prepare($sql);
-        echo " / $sql / ";
-        print_r($params);
-        if(!$stmt) {
+        $oStmt = $this->prepare($sql);
+        if(!$oStmt) {
             $this->errno = $this->m_dbconn->errno;
             $this->error = $this->m_dbconn->error;
-            return NULL;
+            return false;
         }
 
-        $result = NULL;
+        $result = false;
         do {
-            if (!call_user_func_array(array($stmt, "bind_param"), $params)) {
+            if (!call_user_func_array(array($oStmt, "bind_param"), $params)) {
+                $this->errno = $oStmt->errno;
+                $this->error = $oStmt->error;
                 break;
             }
 
-            if (!$stmt->execute()) {
+            if (!$oStmt->execute()) {
+                $this->errno = $oStmt->errno;
+                $this->error = $oStmt->error;
                 break;
             }
 
-            $result = new \JsGreenTeaPHPFramework\SqlSession\Result($stmt);
-            $stmt->reset();
+            $result = new \JsGreenTeaPHPFramework\SqlSession\Result($oStmt, true);
+            $oStmt->reset();
         }while(false);
-
         if(!$result)
-            $result = new \JsGreenTeaPHPFramework\SqlSession\Result($stmt);
-        else
-            $stmt->close();
+            $oStmt->close();
 
         return $result;
     }
@@ -317,8 +316,12 @@ namespace JsGreenTeaPHPFramework\SqlSession;
 class Statment
 {
     private $m_session;
-    private $m_stmt;
+    public $m_stmt;
     private $m_sql;
+
+    private $m_fieldList = NULL;
+
+    private $m_autofreeresult = false;
 
     public $affected_rows = -1;
     public $errno = 0;
@@ -330,7 +333,7 @@ class Statment
     public $param_count = 0;
     public $sqlstate = NULL;
 
-    public function __construct(&$session, &$nativestmt, $sql)
+    public function __construct(&$session, $nativestmt, $sql)
     {
         $this->m_session = $session;
         $this->m_stmt = $nativestmt;
@@ -342,10 +345,19 @@ class Statment
         $this->close();
     }
 
+    public function getNativeStmt()
+    {
+        return $this->m_stmt;
+    }
+
     public function close()
     {
         if($this->m_stmt) {
-            $this->m_stmt->reset();
+            if($this->m_autofreeresult)
+            {
+                $this->m_stmt->free_result();
+                $this->m_autofreeresult = false;
+            }
             $this->m_stmt->close();
             $this->m_stmt = NULL;
         }
@@ -364,7 +376,7 @@ class Statment
         $this->sqlstate = $this->m_stmt->sqlstate;
     }
 
-    public function bind_param($types, ...$parameters)
+    public function bind_param($types, &...$parameters)
     {
         $result = $this->m_stmt->bind_param($types, ...$parameters);
         $this->_copyStates();
@@ -399,17 +411,37 @@ class Statment
         return $result;
     }
 
+    public function store_result()
+    {
+        $result = $this->m_stmt->store_result();
+        $this->_copyStates();
+        $this->m_autofreeresult = true;
+        return $result;
+    }
+
+    public function free_result()
+    {
+        $result = $this->m_stmt->free_result();
+        $this->m_autofreeresult = false;
+        return $result;
+    }
+
     public function get_result()
     {
-        return new \JsGreenTeaPHPFramework\SqlSession\Result($this->m_stmt, false);
+        $oRes = new \JsGreenTeaPHPFramework\SqlSession\Result($this, false);
+        $oRes->_setFieldList($this->m_fieldList);
+        return $oRes;
     }
 };
 
 class Result
 {
+    private $m_oStmt;
+    private $m_nativestmt;
     private $m_autodestructstmt;
-    private $m_stmt;
     private $m_numOfCols;
+    private $m_fieldlist = NULL;
+    private $m_bindresults = NULL;
 
     public $affected_rows = -1;
     public $errno = 0;
@@ -419,18 +451,19 @@ class Result
 
     public $num_rows = 0;
 
-    function __construct($stmt, $autodestructstmt = true)
+    function __construct($oStmt, $autodestructstmt = true)
     {
+        $this->m_oStmt = $oStmt;
+        $this->m_nativestmt = $oStmt->getNativeStmt();
         $this->m_autodestructstmt = $autodestructstmt;
-        $this->m_stmt = $stmt;
 
-        $this->affected_rows = $stmt->affected_rows;
-        $this->errno = $stmt->errno;
-        $this->error_list = $stmt->error_list;
-        $this->error = $stmt->error;
-        $this->insert_id = $stmt->insert_id;
-        $this->m_numOfCols = $stmt->field_count;
-        $this->num_rows = $stmt->num_rows;
+        $this->affected_rows = $this->m_oStmt->affected_rows;
+        $this->errno = $this->m_oStmt->errno;
+        $this->error_list = $this->m_oStmt->error_list;
+        $this->error = $this->m_oStmt->error;
+        $this->insert_id = $this->m_oStmt->insert_id;
+        $this->m_numOfCols = $this->m_oStmt->field_count;
+        $this->num_rows = $this->m_oStmt->num_rows;
     }
 
     function __destruct()
@@ -438,27 +471,49 @@ class Result
         $this->close();
     }
 
+    public function _setFieldList(&$fieldlist)
+    {
+        $this->m_fieldlist = &$fieldlist;
+    }
+
     public function close()
     {
-        if($this->m_autodestructstmt && $this->m_stmt) {
-            $this->m_stmt->reset();
-            $this->m_stmt->close();
-            $this->m_stmt = NULL;
+        if($this->m_oStmt && $this->m_autodestructstmt)
+        {
+            $this->m_oStmt->close();
+            $this->m_oStmt = NULL;
+            $this->m_nativestmt = NULL;
         }
     }
 
     public function fetch_array($flags = \JsGreenTeaPHPFramework\core\SqlSession::FLAG_ASSOC)
     {
         $row = array();
-        $params = array();
         $variables = array();
 
-        $meta = $this->m_stmt->result_metadata();
-        while($field = $meta->fetch_field())
+        $this->errno = 0;
+
+        if(!$this->m_fieldlist) {
+            $this->m_fieldlist = array();
+            $meta = $this->m_nativestmt->result_metadata();
+            if (!$meta) {
+                $this->errno = $this->m_nativestmt->errno;
+                $this->error = $this->m_nativestmt->error;
+                return false;
+            }
+            while ($field = $meta->fetch_field()) {
+                $this->m_fieldlist[] = $field;
+            }
+            $meta->close();
+        }
+
+        $row = array();
+        foreach($this->m_fieldlist as $field)
         {
             $variables[] = $field;
         }
 
+        $params = array();
         for($i=0; $i<$this->m_numOfCols; $i++)
         {
             if($flags == \JsGreenTeaPHPFramework\core\SqlSession::FLAG_ASSOC) {
@@ -470,10 +525,19 @@ class Result
             }
         }
 
-        $this->m_stmt->bind_result(...$params);
+        if(!$this->m_nativestmt->bind_result(...$params))
+        {
+            $this->errno = $this->m_nativestmt->errno;
+            $this->error = $this->m_nativestmt->error;
+            return false;
+        }
 
         // This should advance the "$stmt" cursor.
-        if (!$this->m_stmt->fetch()) { return NULL; };
+        if (!$this->m_nativestmt->fetch()) {
+            $this->errno = $this->m_nativestmt->errno;
+            $this->error = $this->m_nativestmt->error;
+            return NULL;
+        };
 
         if(($flags != \JsGreenTeaPHPFramework\core\SqlSession::FLAG_ASSOC) && ($flags & \JsGreenTeaPHPFramework\core\SqlSession::FLAG_ASSOC)) {
             for ($i = 0; $i < $this->m_numOfCols; $i++) {

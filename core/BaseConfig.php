@@ -43,6 +43,14 @@ class BaseConfig
     public $session_timeout = 3600;
     public $session_cookiename = "JGTFSESSION";
 
+    public $mail_smtp_host = "";
+    public $mail_smtp_port = 25;
+    public $mail_smtp_secure = "";
+    public $mail_smtp_username = "";
+    public $mail_smtp_password = "";
+    public $mail_defaullt_from_email = "";
+    public $mail_defaullt_from_name = "";
+
     public function __construct($websitename)
     {
         $this->m_website_name = $websitename;

@@ -20,13 +20,15 @@ class BasePasswordEncoder extends \JsGreenTeaPHPFramework\core\FrameworkObject
         if($algorithm == 'md5')
             return "\x01";
         else if($algorithm == 'bcrypt')
-            return "\x2a";
+            return "\x1a"; // orig. 0x2a
         else if($algorithm == "sha256")
             return "\x05";
         else if($algorithm == "sha512")
             return "\x06";
         else if($algorithm == "pbkdf2")
             return "\x12";
+        else if($algorithm == "mysql")
+            return "*"; // == 0x2a
         else
             return NULL;
     }
