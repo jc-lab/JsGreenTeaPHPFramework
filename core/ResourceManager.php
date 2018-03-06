@@ -61,6 +61,13 @@ class ResourceManager
                     $this->m_common_strings[$attrs['name']->__toString()] = $item->__toString();
                 }
             }
+            if(isset($this->m_common->AutoLoader))
+            {
+                foreach($this->m_common->AutoLoader as $item) {
+                    $attrs = $item->attributes();
+                    require_once($attrs['path']);
+                }
+            }
         }
         $this->m_inited = true;
         foreach($this->m_receiverHandlers as &$item)

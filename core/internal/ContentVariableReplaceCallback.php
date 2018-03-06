@@ -65,8 +65,20 @@ class ContentVariableReplaceCallback
             $oReplaceCB = new ContentVariableReplaceCallback($this->oCore, $this->m_locale, $this->oView, $this->attributes, $this->attributeCallbacks);
             $content = preg_replace_callback('/[\$#]{([^}]+)}/', array($oReplaceCB, "cbreplace"), $content);
             $i++;
-            if($i > 10)
-                break;
+            if($i > 100)
+                return NULL;
+        }while($oReplaceCB->replacecount > 0);
+        return $content;
+    }
+
+    public static function replace($content, &$oCore, &$locale, &$oView, &$attributes, &$attributeCallbacks) {
+        $i=0;
+        do {
+            $oReplaceCB = new ContentVariableReplaceCallback($oCore, $locale, $oView, $attributes, $attributeCallbacks);
+            $content = preg_replace_callback('/[\$#]{([^}]+)}/', array($oReplaceCB, "cbreplace"), $content);
+            $i++;
+            if($i > 100)
+                return NULL;
         }while($oReplaceCB->replacecount > 0);
         return $content;
     }

@@ -39,6 +39,6 @@ class SiteCache extends FrameworkObject
 
     public function setEx($key, &$value, $assist = 0)
     {
-        return $this->m_oFrameworkCache->setEx('sitecache:'.$key, $value);
+        return $this->m_oFrameworkCache->setEx('sitecache:'.$key, $value, $assist);
     }
 }

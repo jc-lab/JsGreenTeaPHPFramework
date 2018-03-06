@@ -26,7 +26,7 @@ class SqlSession
     public $error = "";
     public $errno = 0;
 
-    public function &getConnection()
+    public function &getNativeConnection()
     {
         return $this->m_dbconn;
     }

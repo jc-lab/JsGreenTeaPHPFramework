@@ -171,7 +171,10 @@ class Core
     public function getServerRes($name)
     {
         $name = strtoupper($name);
-        if(strcmp($name, "SITEROOT_URI") == 0)
+        if(strcmp($name, "SITEWORKDIR") == 0)
+        {
+            return $this->m_workdir;
+        }else if(strcmp($name, "SITEROOT_URI") == 0)
         {
             return $this->m_current_siteroot;
         }else if(strcmp($name, "REQUEST_URI") == 0)
@@ -234,6 +237,11 @@ class Core
         $tmparr = array($text, substr($text, 2, strlen($text) - 3));
         $content = $oReplaceCB->cbreplace($tmparr);
         return $content;
+    }
+
+    public function parseRes($text, $locale = null, $oView = null, $attributes = null, $attributeCallbacks = null)
+    {
+        return \JsGreenTeaPHPFramework\core\internal\ContentVariableReplaceCallback::replace($text, $this, $locale, $oView, $attributes, $attributeCallbacks);
     }
 
     public static function getTickCount()

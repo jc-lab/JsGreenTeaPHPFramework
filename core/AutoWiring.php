@@ -53,9 +53,9 @@ class AutoWiring
         {
             $attrs = $item->attributes();
             if(isset($attrs['value']))
-                $value = $attrs['value']->__toString();
+                $value = $this->_resolveString($attrs['value']->__toString());
             else
-                $value = $item->__toString();
+                $value = $this->_resolveString($item->__toString());
             return 1;
         }else if(strcmp($name, "ref") == 0)
         {
@@ -102,10 +102,13 @@ class AutoWiring
 
     private function _resolveString($string)
     {
+        /*
         $oReplaceCB = new \JsGreenTeaPHPFramework\AutoWiring\_ContentVariableReplaceCallback();
         $oReplaceCB->oResourceManager = &$this->m_oResourceManager;
         $string = preg_replace_callback('/[\$#]{([^}]+)}/', array($oReplaceCB, "cbreplace"), $string);
         return $string;
+        */
+        return $this->m_oCore->parseRes($string, null, null, null, null, null);
     }
 
     private function _classIniter(&$xmlItems, &$object)
@@ -251,6 +254,24 @@ class AutoWiring
                         $this->m_oCore->_initFrameworkObject($object);
 
                         $this->_classIniter($children, $object);
+
+                        if(isset($children->{'call'}))
+                        {
+                            foreach($children->{'call'} as $subitem)
+                            {
+                                $subitem_attris = $subitem->attributes();
+                                $params_arr = array();
+
+                                foreach($subitem->children() as $paramitem)
+                                {
+                                    $value = NULL;
+                                    $this->_propertyParseSubElement($paramitem, $value);
+                                    $params_arr[] = $value;
+                                }
+
+                                call_user_func_array(array($object, $subitem_attris['method']->__toString()), $params_arr);
+                            }
+                        }
 
                         return $this->m_WiredObjects[$id];
                     }
