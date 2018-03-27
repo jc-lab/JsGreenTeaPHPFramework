@@ -131,10 +131,10 @@ class ModelAndView
 
         if($viewfilepath)
         {
+            $gttlBlock = new \JsGreenTeaPHPFramework\core\internal\GTTLProcessBlock(NULL);
             $content = self::_executeScript($viewfilepath, $request, $response, $this->m_pageContext, $this->m_model_bindparams);
-
-            $oReplaceCB = new \JsGreenTeaPHPFramework\core\internal\ContentVariableReplaceCallback($oCore, $this->m_locale, $this, $request->getAttributes(), $this->m_attributeCallbacks);
-            $content = preg_replace_callback('/[\$#]{([^}]+)}/', array($oReplaceCB, "cbreplace"), $content);
+            $content = \JsGreenTeaPHPFramework\core\internal\GTTLProcessor::process($gttlBlock, $content);
+            $content = \JsGreenTeaPHPFramework\core\internal\ContentVariableReplaceCallback::replace($content, $oCore, $this->m_locale, $this, $request->getAttributes(), $this->m_attributeCallbacks);
             echo $content;
         }else if($response->getStatus() >= 400)
         {
