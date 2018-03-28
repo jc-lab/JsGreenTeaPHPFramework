@@ -15,6 +15,7 @@ namespace JsGreenTeaPHPFramework\core;
 
 class FrameworkCache
 {
+    const DBTYPE_NONE = 0;
     const DBTYPE_SQL = 1;
     const DBTYPE_REDIS = 2;
 
@@ -33,9 +34,12 @@ class FrameworkCache
         {
             // use redis
             $this->m_dbtype = self::DBTYPE_REDIS;
-        }else{
+        }else if($this->m_sqlSession)
+        {
             // use mysql
             $this->m_dbtype = self::DBTYPE_SQL;
+        }else{
+            $this->m_dbtype = self::DBTYPE_NONE;
         }
     }
 
