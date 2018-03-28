@@ -67,16 +67,20 @@ class Core
         $this->m_configs = &$this->m_oConfig->_friend_core();
         $this->m_oConfig->init();
 
-        $this->m_oFrameworkSqlSession = new FrameworkSqlSession($this);
-
-        if(($this->m_oConfig->frameworksql_host == $this->m_oConfig->sitesql_host) &&
-            ($this->m_oConfig->frameworksql_port == $this->m_oConfig->sitesql_port) &&
-            ($this->m_oConfig->frameworksql_username == $this->m_oConfig->sitesql_username) &&
-            ($this->m_oConfig->frameworksql_dbname == $this->m_oConfig->sitesql_dbname))
+        if($this->m_oConfig->frameworksql_host)
         {
-            $this->m_oSiteSqlSession = new SiteSqlSession($this->m_oFrameworkSqlSession);
-        }else{
-            $this->m_oSiteSqlSession = new SiteSqlSession($this);
+            $this->m_oFrameworkSqlSession = new FrameworkSqlSession($this);
+        }
+
+        if($this->m_oConfig->sitesql_host) {
+            if (($this->m_oConfig->frameworksql_host == $this->m_oConfig->sitesql_host) &&
+                ($this->m_oConfig->frameworksql_port == $this->m_oConfig->sitesql_port) &&
+                ($this->m_oConfig->frameworksql_username == $this->m_oConfig->sitesql_username) &&
+                ($this->m_oConfig->frameworksql_dbname == $this->m_oConfig->sitesql_dbname)) {
+                $this->m_oSiteSqlSession = new SiteSqlSession($this->m_oFrameworkSqlSession);
+            } else {
+                $this->m_oSiteSqlSession = new SiteSqlSession($this);
+            }
         }
 
         if($this->m_oConfig->frameworkredis_host) {
@@ -295,8 +299,10 @@ class Core
         return $this->m_oAutoWiring;
     }
 
-    public function &createSessionObject()
+    public function createSessionObject()
     {
+        if(!$this->m_oFrameworkSqlSession)
+            return NULL;
         $session = new Session($this, $this->getConfig());
         $this->m_oAutoWiring->applyAutowiringToClass(get_class($session), $session);
         return $session;
@@ -454,7 +460,9 @@ class Core
         $response = new HttpResponse($this);
         $pageSession = &$request->getPageSession();
         $pageSession['session'] = $request->getSession();
-        $this->_getFrameworkInternalObject('authenticationManager')->checkLogon($request);
+        $authenticationManager = $this->_getFrameworkInternalObject('authenticationManager');
+        if($authenticationManager)
+            $authenticationManager->checkLogon($request);
         $this->show($request, $response);
     }
 };

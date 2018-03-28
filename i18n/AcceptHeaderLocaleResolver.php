@@ -57,7 +57,7 @@ class AcceptHeaderLocaleResolver implements LocaleResolver
         usort($tmpLocaleItems, '_mycmp');
         $this->availableLocales = $tmpLocaleItems;
 
-        $locale = new Locale();
+        $locale = new \JsGreenTeaPHPFramework\core\Locale();
         if(count($tmpLocaleItems > 0))
         {
             $locale->language = $tmpLocaleItems[0]['language'];
