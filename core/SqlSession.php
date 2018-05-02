@@ -376,6 +376,11 @@ class Statment
         $this->sqlstate = $this->m_stmt->sqlstate;
     }
 
+    public function getSql()
+    {
+        return $this->m_sql;
+    }
+
     public function bind_param($types, &...$parameters)
     {
         $result = $this->m_stmt->bind_param($types, ...$parameters);
@@ -484,6 +489,11 @@ class Result
             $this->m_oStmt = NULL;
             $this->m_nativestmt = NULL;
         }
+    }
+
+    public function getSql()
+    {
+        return $this->m_oStmt->getSql();
     }
 
     public function fetch_array($flags = \JsGreenTeaPHPFramework\core\SqlSession::FLAG_ASSOC)

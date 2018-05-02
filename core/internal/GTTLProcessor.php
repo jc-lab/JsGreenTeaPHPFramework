@@ -20,6 +20,10 @@ class GTTLProcessor
     public static function process($rootBlock, $html)
     {
         $htmldoc = str_get_html($html, true, true, DEFAULT_TARGET_CHARSET, false);
+        if(!$htmldoc)
+        {
+            return $html;
+        }
         $pos = 0;
         do {
             $matches = NULL;
