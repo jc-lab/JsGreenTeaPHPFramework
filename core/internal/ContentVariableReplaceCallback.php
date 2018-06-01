@@ -59,11 +59,16 @@ class ContentVariableReplaceCallback
 
     public function cbreplace($matches)
     {
+        $type = substr($matches[0], 0, 1);
+        if($type == '\\')
+        {
+            return substr($matches[0], 1);
+        }
         $i=0;
         $content = $this->realreplace($matches);
         do {
             $oReplaceCB = new ContentVariableReplaceCallback($this->oCore, $this->m_locale, $this->oView, $this->attributes, $this->attributeCallbacks);
-            $content = preg_replace_callback('/[\$#]{([^}]+)}/', array($oReplaceCB, "cbreplace"), $content);
+            $content = preg_replace_callback('/\\\\?[\$#]{([^}]+)}/', array($oReplaceCB, "cbreplace"), $content);
             $i++;
             if($i > 100)
                 return NULL;
@@ -72,14 +77,14 @@ class ContentVariableReplaceCallback
     }
 
     public static function replace($content, &$oCore, &$locale, &$oView, &$attributes, &$attributeCallbacks) {
-        $i=0;
-        do {
+        //$i=0;
+        //do {
             $oReplaceCB = new ContentVariableReplaceCallback($oCore, $locale, $oView, $attributes, $attributeCallbacks);
-            $content = preg_replace_callback('/[\$#]{([^}]+)}/', array($oReplaceCB, "cbreplace"), $content);
-            $i++;
-            if($i > 100)
-                return NULL;
-        }while($oReplaceCB->replacecount > 0);
+            $content = preg_replace_callback('/\\\\?[\$#]{([^}]+)}/', array($oReplaceCB, "cbreplace"), $content);
+        //    $i++;
+        //    if($i > 100)
+        //        return NULL;
+        //}while($oReplaceCB->replacecount > 0);
         return $content;
     }
 }
