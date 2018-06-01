@@ -93,7 +93,7 @@ class PBKDF2PasswordEncoder extends BasePasswordEncoder implements PasswordEncod
             $realsalt = $salt.$this->m_secret;
         else
             $realsalt = $salt;
-        return $salt._realEncode($this->m_algorithm, $this->m_secret, $salt, $this->m_iterations, $this->m_hashlength, $rawPassword);
+        return $salt.self::_realEncode($this->m_algorithm, $this->m_secret, $salt, $this->m_iterations, $this->m_hashlength, $rawPassword);
     }
 
     public function matches($rawPassword, $encodedPassword)
