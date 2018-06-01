@@ -19,14 +19,6 @@ class AcceptHeaderLocaleResolver implements LocaleResolver
 
     public function resolveLocale($request)
     {
-        function _mycmp($a, $b)
-        {
-            if ($a['quality'] == $b['quality']) {
-                return 0;
-            }
-            return ($a['quality'] < $b['quality']) ? -1 : 1;
-        }
-
         $tmpLocaleItems = array();
         $arr = explode(',', $_SERVER["HTTP_ACCEPT_LANGUAGE"]);
         foreach($arr as &$item)
@@ -54,10 +46,14 @@ class AcceptHeaderLocaleResolver implements LocaleResolver
                 'quality' => $tmp_quality,
             );
         }
-        usort($tmpLocaleItems, '_mycmp');
+        usort($tmpLocaleItems, create_function('$a,$b',
+            'if ($a[\'quality\'] == $b[\'quality\']) {
+                return 0;
+            }
+            return ($a[\'quality\'] < $b[\'quality\']) ? -1 : 1;'));
         $this->availableLocales = $tmpLocaleItems;
 
-        $locale = new Locale();
+        $locale = new \JsGreenTeaPHPFramework\core\Locale();
         if(count($tmpLocaleItems > 0))
         {
             $locale->language = $tmpLocaleItems[0]['language'];

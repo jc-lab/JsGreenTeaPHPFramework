@@ -30,7 +30,8 @@ class Request
         $this->m_oCore = $oCore;
         $this->m_parameters = $_GET;
         $this->m_session = $oCore->createSessionObject();
-        $this->m_session->init();
+        if($this->m_session)
+            $this->m_session->init();
     }
 
     public function _setUrlPath($uri_path)
