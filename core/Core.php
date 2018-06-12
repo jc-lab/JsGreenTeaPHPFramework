@@ -53,10 +53,13 @@ class Core
         return $this->m_oAutoWiring->getObject($id);
     }
 
-    public function __construct($websitename, $rooturi)
+    public function __construct($websitename, $rooturi, $workdir = NULL)
     {
         $rooturi = str_replace('\\', '/', $rooturi);
-        $this->m_workdir = 'greentea.'.$websitename;
+        if($workdir)
+            $this->m_workdir = $workdir;
+        else
+            $this->m_workdir = 'greentea.'.$websitename;
         require_once($this->m_workdir.'/config.php');
         $this->m_website_name = $websitename;
         $this->m_current_siteroot = $rooturi;
@@ -392,7 +395,7 @@ class Core
         }else{
             $clsName = '\\'.$this->m_configs['routes'][$matchedpathkey];
             $tmpfilepath = str_replace('\\', '/', $this->m_configs['routes'][$matchedpathkey]);
-            $controller_path = 'greentea.'.$this->m_website_name.'/'.$tmpfilepath.'.php';
+            $controller_path = $this->m_workdir.'/'.$tmpfilepath.'.php';
             if(file_exists($controller_path))
             {
                 require_once($controller_path);
