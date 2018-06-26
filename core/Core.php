@@ -460,7 +460,7 @@ class Core
     public function index($rooturi)
     {
         $request = new Request($this);
-        $response = new HttpResponse($this);
+        $response = new HttpResponse($this, $request);
         $pageSession = &$request->getPageSession();
         $pageSession['session'] = $request->getSession();
         $authenticationManager = $this->_getFrameworkInternalObject('authenticationManager');
