@@ -31,6 +31,8 @@ class Session
     private $m_settings_domain = "";
     private $m_settings_secure = false;
 
+    private $m_output_setcookie = false;
+
     public function __construct($oCore, $oConfig)
     {
         $this->m_oCore = $oCore;
@@ -66,7 +68,7 @@ class Session
             $expire = 0;
             if($this->m_settings_maxAge > 0)
                 $expire = time() + $this->m_settings_maxAge;
-            setcookie($this->m_oConfig->session_cookiename, $this->m_session_idhex,$expire, $this->m_settings_path, $this->m_settings_domain, $this->m_settings_secure, false);
+            $this->setCookie($expire);
         }
 
         $sqlSession = $this->m_oCore->_getFrameworkSqlSession();
@@ -79,15 +81,29 @@ class Session
         $this->attachSessionId(NULL, $useragent, $remoteip);
     }
 
+    public function setCookie($expire = FALSE)
+    {
+        $this->m_output_setcookie = true;
+        if($expire === NULL)
+        {
+            $expire = 0;
+            if($this->m_settings_maxAge > 0)
+                $expire = time() + $this->m_settings_maxAge;
+        }
+        $this->m_output_setcookieexpire = $expire;
+    }
+
     public function attachSessionId($sessionid, $useragent = NULL, $remoteip = NULL, $useOnlyExists = false)
     {
         $sqlSession = $this->m_oCore->_getFrameworkSqlSession();
 
+        $this->m_remoteip = $remoteip;
+
         if($sessionid) {
             $this->m_session_id = $sessionid;
             $this->m_session_idhex = bin2hex($sessionid);
+            $this->setCookie(NULL);
         }
-        $this->m_remoteip = $remoteip;
 
         // Query and Update
         $dbres = $sqlSession->queryRaw("SELECT * FROM `".$this->m_oCore->_getFrameworkSqlTable('sessions')."` WHERE `sid`=X'".$this->m_session_idhex."'", NULL, true);
@@ -217,6 +233,13 @@ class Session
         $this->m_cachedValues = array();
     }
 
+    public function onBeginResponse()
+    {
+        if($this->m_output_setcookie) {
+            setcookie($this->m_oConfig->session_cookiename, $this->m_session_idhex, $this->m_output_setcookieexpire, $this->m_settings_path, $this->m_settings_domain, $this->m_settings_secure, false);
+        }
+    }
+
     public static function get($name)
     {
         global $request;
@@ -227,5 +250,4 @@ class Session
         }
         return NULL;
     }
-
 };

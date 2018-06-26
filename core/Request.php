@@ -107,4 +107,12 @@ class Request
     {
         return $this->m_pageSession;
     }
+
+    public function onBeginResponse()
+    {
+        if($this->m_session)
+        {
+            $this->m_session->onBeginResponse();
+        }
+    }
 };

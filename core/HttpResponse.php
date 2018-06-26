@@ -18,13 +18,15 @@ require_once(__DIR__.'/HttpStatus.php');
 class HttpResponse
 {
     private $m_oCore;
+    private $m_oRequest;
     private $m_httpcode = HttpStatus::HTTP_OK;
 
     private $m_outputState = 0;
 
-    public function __construct($oCore)
+    public function __construct($oCore, $oRequest)
     {
         $this->m_oCore = $oCore;
+        $this->m_oRequest = $oRequest;
     }
 
     public function setStatus($httpcode)
@@ -43,6 +45,11 @@ class HttpResponse
         {
             header($_SERVER['SERVER_PROTOCOL'].' '.$this->m_httpcode.' '.HttpStatus::getString($this->m_httpcode));
             $this->m_outputState = 1;
+
+            if($this->m_oRequest)
+            {
+                $this->m_oRequest->onBeginResponse();
+            }
         }
     }
 
