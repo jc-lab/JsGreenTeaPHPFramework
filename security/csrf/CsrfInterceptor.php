@@ -36,7 +36,7 @@ class CsrfInterceptor extends \JsGreenTeaPHPFramework\core\HandlerInterceptor
             if($value == 0)
             {
                 $oResourceManager = self::getResourceManager();
-                if($oResourceManager->getResSettingsBool("security:csrf:intercept_method_".$method))
+                if($oResourceManager->getResSettingBool("security:csrf:intercept_method_".$method))
                 {
                     $value = 1;
                 }else{
