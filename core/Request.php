@@ -29,9 +29,17 @@ class Request
     {
         $this->m_oCore = $oCore;
         $this->m_parameters = $_GET;
-        $this->m_session = $oCore->createSessionObject();
-        if($this->m_session)
-            $this->m_session->init();
+        $sessionRepository = $oCore->getAutoWiredObject("sessionRepository");
+        $httpSessionManager = $oCore->getAutoWiredObject("httpSessionManager");
+        if($sessionRepository) {
+            $sessionCookie = $this->m_oCore->getConfig()->session_cookiename;
+            $sessionId = @$_COOKIE[$sessionCookie];
+            if($sessionId == null && ($httpSessionManager->getCreationPolicy() != "NEVER")) {
+                $this->m_session = $sessionRepository->createSession();
+            }else{
+                $this->m_session = $sessionRepository->findById($sessionId);
+            }
+        }
     }
 
     public function _setUrlPath($uri_path)
@@ -110,9 +118,22 @@ class Request
 
     public function onBeginResponse()
     {
-        if($this->m_session)
-        {
-            $this->m_session->onBeginResponse();
+        $httpSessionManager = $this->m_oCore->getAutoWiredObject("httpSessionManager");
+        $sessionRepository = $this->m_oCore->getAutoWiredObject("sessionRepository");
+        if($this->m_session) {
+            $sessionCookie = $this->m_oCore->getConfig()->session_cookiename;
+            if ($sessionRepository && $this->m_session->isValid()) {
+                $sessionRepository->save($this->m_session);
+                $oldSessionId = @$_COOKIE[$sessionCookie];
+                $newSessionId = $this->m_session->getId();
+
+                if ($newSessionId && ($oldSessionId != $newSessionId)) {
+                    $httpSessionManager->setSessionCookie($newSessionId, NULL);
+                }
+            } else if (!$this->m_session->isValid() && $this->m_session->getId()) {
+                unset($_COOKIE[$sessionCookie]);
+                $httpSessionManager->setSessionCookie(NULL, FALSE);
+            }
         }
     }
 };

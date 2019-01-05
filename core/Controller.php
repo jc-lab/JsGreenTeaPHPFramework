@@ -157,4 +157,8 @@ class Controller extends FrameworkObject
         return $newitem;
     }
 
+    // default Exception handler
+    public function exceptionHandler($exception) {
+        throw $exception;
+    }
 }

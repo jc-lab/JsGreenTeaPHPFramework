@@ -152,6 +152,11 @@ class Core
         $this->m_oSubObjects['siteCache'] = new SiteCache($this->m_oFrameworkCache);
         $this->_initFrameworkObject($this->m_oSubObjects['siteCache']);
         $this->m_oAutoWiring->setObject('siteCache', $this->m_oSubObjects['siteCache']);
+
+        $this->m_oSubObjects['httpSessionManager'] = new HttpSessionManager();
+        $this->_initFrameworkObject($this->m_oSubObjects['httpSessionManager']);
+        $this->m_oAutoWiring->applyAutowiringToClass(get_class($this->m_oSubObjects['httpSessionManager']), $this->m_oSubObjects['httpSessionManager']);
+        $this->m_oAutoWiring->setObject('httpSessionManager', $this->m_oSubObjects['httpSessionManager']);
     }
 
     // Function to get the client ip address
@@ -413,32 +418,33 @@ class Core
                     $this->_initFrameworkObject($controller);
                     $controller->init();
 
-                    foreach($this->m_oUrlInterceptors as &$interceptor)
-                    {
-                        if(!($bInterceptorResult = $interceptor->preHandle($request, $response, NULL)))
-                        {
-                            break;
-                        }
-                    }
-
-                    if($bInterceptorResult) {
-                        $object = $controller->_invoke($request, $response, $pagepath);
-                        $request->_setModelAndView($object);
-
-                        foreach($this->m_oUrlInterceptors as &$interceptor)
-                        {
-                            if(!($bInterceptorResult = $interceptor->postHandle($request, $response, NULL, $request->_getModelAndView())))
-                            {
+                    try {
+                        foreach ($this->m_oUrlInterceptors as &$interceptor) {
+                            if (!($bInterceptorResult = $interceptor->preHandle($request, $response, NULL))) {
                                 break;
                             }
                         }
 
-                        $request->_getModelAndView()->_execute($this, $request, $response);
-                    }
+                        if ($bInterceptorResult) {
+                            $object = $controller->_invoke($request, $response, $pagepath);
+                            $request->_setModelAndView($object);
 
-                    if(!$bInterceptorResult)
-                    {
-                        $response->setStatus(HttpStatus::HTTP_INTERNAL_SERVER_ERROR);
+                            foreach ($this->m_oUrlInterceptors as &$interceptor) {
+                                if (!($bInterceptorResult = $interceptor->postHandle($request, $response, NULL, $request->_getModelAndView()))) {
+                                    break;
+                                }
+                            }
+
+                            $request->_getModelAndView()->_execute($this, $request, $response);
+                        }
+
+                        if (!$bInterceptorResult) {
+                            $response->setStatus(HttpStatus::HTTP_INTERNAL_SERVER_ERROR);
+                            $request->_getModelAndView()->_execute($this, $request, $response);
+                        }
+                    }catch(\Exception $ex){
+                        $object = $controller->exceptionHandler($ex);
+                        $request->_setModelAndView($object);
                         $request->_getModelAndView()->_execute($this, $request, $response);
                     }
                 }else{

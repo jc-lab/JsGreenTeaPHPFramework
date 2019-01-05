@@ -91,6 +91,16 @@ class RedisSession
         return json_decode($serializedData);
     }
 
+    public function hgetall($key)
+    {
+        return $this->m_dbconn->hgetall($key);
+    }
+
+    public function hset($key, $hkey, $hvalue)
+    {
+        return $this->m_dbconn->hset($key, $hkey, $hvalue);
+    }
+
     public function getset($key, $value)
     {
         $serializedData = $this->m_dbconn->getSet($key, $value);
