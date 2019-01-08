@@ -32,8 +32,7 @@ class Request
         $sessionRepository = $oCore->getAutoWiredObject("sessionRepository");
         $httpSessionManager = $oCore->getAutoWiredObject("httpSessionManager");
         if($sessionRepository) {
-            $sessionCookie = $this->m_oCore->getConfig()->session_cookiename;
-            $sessionId = @$_COOKIE[$sessionCookie];
+            $sessionId = $httpSessionManager->getId();
             if($sessionId == null && ($httpSessionManager->getCreationPolicy() != "NEVER")) {
                 $this->m_session = $sessionRepository->createSession();
             }else{
@@ -124,9 +123,8 @@ class Request
             $sessionCookie = $this->m_oCore->getConfig()->session_cookiename;
             if ($sessionRepository && $this->m_session->isValid()) {
                 $sessionRepository->save($this->m_session);
-                $oldSessionId = @$_COOKIE[$sessionCookie];
+                $oldSessionId = $httpSessionManager->getId();
                 $newSessionId = $this->m_session->getId();
-
                 if ($newSessionId && ($oldSessionId != $newSessionId)) {
                     $httpSessionManager->setSessionCookie($newSessionId, NULL);
                 }

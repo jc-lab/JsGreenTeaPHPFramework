@@ -22,6 +22,19 @@ class HttpSessionManager extends FrameworkObject
 
     private $m_settings_creationPolicy = false;
 
+    public function getId() {
+        $sessionCookie = $this->m_oCore->getConfig()->session_cookiename;
+        if(isset($_COOKIE[$sessionCookie])) {
+            $data = $_COOKIE[$sessionCookie];
+            if(strpos($data, '-')) {
+                return $data;
+            }else{
+                return base64_decode($data);
+            }
+        } else
+            return NULL;
+    }
+
     public function setSessionCookie($sessionId, $expire = FALSE)
     {
         if($expire === NULL)
