@@ -98,6 +98,7 @@ class Request
 
     public function getParameter($key)
     {
+        if (!isset($this->m_parameters[$key])) return null;
         return $this->m_parameters[$key];
     }
 
