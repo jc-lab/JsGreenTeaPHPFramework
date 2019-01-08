@@ -158,7 +158,7 @@ class Controller extends FrameworkObject
     }
 
     // default Exception handler
-    public function exceptionHandler($exception) {
+    public function exceptionHandler($exception, $request, $response) {
         throw $exception;
     }
 }

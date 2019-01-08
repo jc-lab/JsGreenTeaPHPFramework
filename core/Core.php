@@ -443,7 +443,7 @@ class Core
                             $request->_getModelAndView()->_execute($this, $request, $response);
                         }
                     }catch(\Exception $ex){
-                        $object = $controller->exceptionHandler($ex);
+                        $object = $controller->exceptionHandler($ex, $request, $response);
                         $request->_setModelAndView($object);
                         $request->_getModelAndView()->_execute($this, $request, $response);
                     }
