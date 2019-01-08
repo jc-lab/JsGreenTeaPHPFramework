@@ -66,6 +66,8 @@ class SpringSessionRepository extends FrameworkObject implements SessionReposito
     }
 
     public function deleteById($sessionId) {
+        $redisSession = $this->m_oCore->_getFrameworkRedisSession();
+        $redisSession->del($this->redisSessionDataPrefix.$sessionId);
     }
 
     private static function generateUUID() {
