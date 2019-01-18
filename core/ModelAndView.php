@@ -108,6 +108,8 @@ class ModelAndView
         {
             $redirectUrl = substr($this->m_pageContext['request']['viewPath'], strlen($conststr_redirect));
             header("Location: ".$redirectUrl);
+            $response->setStatus(HttpStatus::HTTP_FOUND);
+            $response->beginOutput();
             return ;
         }
         if($this->m_pageContext['request']['viewPath']) {
